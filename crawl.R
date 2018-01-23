@@ -31,7 +31,7 @@ executeTask <-  function(task) {
       write.csv(links, url_file, row.names = FALSE)
       
     }, error = function(e) {
-      cat(sprintf("...ERROR: %\n", e$message))
+      cat(sprintf("...ERROR: %s\n", e$message))
     })
     TRUE 
   } else {
