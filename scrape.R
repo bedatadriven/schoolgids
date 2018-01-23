@@ -49,13 +49,20 @@ find_schoolgids <- function(school_url, debug = FALSE) {
           } else if(any(school_gids)) {
             page_links$page_url <- url
             return(page_links[school_gids, ])
-          }
+          } 
+        }
+        
+        # impose a reasonable limit of pages to search for each school
+        if(length(visited) > 500) {
+          return(NA_character_)
         }
         
         # Otherwise identify the next round of pages to crawl
-        html_urls <- unique(page_links$url[!pdf_links & !is.na(page_links$url)])
+        non_html_links <- grepl(page_links$url, pattern = "\\.(pdf|jpg|jpeg|png)$", ignore.case = TRUE)
+        
+        html_urls <- unique(page_links$url[!non_html_links & !is.na(page_links$url)])
         already_seen <- html_urls %in% visited
-        domain <- vapply(html_urls, FUN.VALUE = character(1), FUN = function(url) parse_url(url)$hostname)
+        domain <- vapply(html_urls, FUN.VALUE = character(1), FUN = url_domain)
       
         in_domain <- if(is.na(root_domain)) {
           TRUE
@@ -74,6 +81,16 @@ find_schoolgids <- function(school_url, debug = FALSE) {
   
   pdfs
 }
+
+url_domain <- function(url) {
+  hostname <- parse_url(url)$hostname
+  if(is.character(hostname)) {
+    hostname
+  } else {
+    ""
+  }
+}
+
 is_school_gids <- function(links) {
   match <- grepl(links$text, pattern = "gids", ignore.case = TRUE) | 
            grepl(links$url, pattern = "gids|schoolg", ignore.case = TRUE)
@@ -133,38 +150,45 @@ parse_refresh_tag <- function(meta_element) {
   }
 }
 
+modify_url_or_na <- function(...) {
+  tryCatch(modify_url(...), error = function(e) NA_character_)
+}
+
 normalize_link <- function(base_url, link) {
   
   stopifnot(inherits(base_url, "url"))
   stopifnot(is.character(link) && length(link) == 1)
   
-  # Strip the fragment from the link
-  link <- gsub(link, pattern = "#.+$", replacement = "")
   
-  # is the link actually an absolute URL or path?
-  if(grepl(link, pattern = "^https?://")) {
-    return(link)
-  }
-  
-  # If this another sort of link, like mailto: etc,
-  # return NA
-  if(grepl(link, pattern = "^[A-Za-z]+:")) {
-    return(NA_character_)
-  }
-
   # is the url on the same page?
   if(grepl(link, pattern = "^#")) {
-    return(modify_url(base_url))
+    return(modify_url_or_na(base_url))
+  }
+  
+  # Parse the link
+  link_url <- parse_url(link)
+  
+  # the query string of the base url is never used
+  base_url$query <- NULL
+  
+  # is the link simply a query string?
+  if(!is.null(link_url$query) && !nzchar(link_url$path)) {
+    return(modify_url_or_na(base_url, query = link_url$query))
+  }
+  
+  # is the link actually an absolute URL?
+  if(!is.null(link_url$scheme) || !is.null(link_url$hostname)) {
+    return(modify_url_or_na(link_url, fragment = NULL))
   }
 
   # is the url an absolute path?
-  if(grepl(link, pattern = "^/")) {
-    return(modify_url(url = base_url, path = link, fragment = NULL))
+  if(grepl(link_url$path, pattern = "^/")) {
+    return(modify_url_or_na(url = base_url, path = link_url$path, query = link_url$query, fragment = NULL))
   }
   
   # Otherwise need to combine paths
   base_parts <- strsplit(base_url$path, split = "/", fixed = TRUE)[[1]]
-  link_parts <- strsplit(link, split = "/", fixed = TRUE)[[1]]
+  link_parts <- strsplit(link_url$path, split = "/", fixed = TRUE)[[1]]
   
   # Strip the filename if the path is not a "directory"
   # For example "/foo/index.html"
@@ -172,5 +196,5 @@ normalize_link <- function(base_url, link) {
     length(base_parts) <- length(base_parts) - 1
   }
   
-  modify_url(base_url, path = paste(c(base_parts, link_parts), collapse="/"))
+  modify_url_or_na(base_url, path = paste(c(base_parts, link_parts), collapse="/"), query = link_url$query)
 }
