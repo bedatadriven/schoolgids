@@ -46,6 +46,8 @@ if(parallel) {
 # as most of the time is spent waiting on the network
 num_workers <- detectCores() * 2
 
+cat(sprintf("Using %d workers.\n", num_workers))
+
 cl <- makeCluster(num_workers)
 clusterExport(cl, ls())
 clusterApplyLB(cl, tasks, executeTask)
