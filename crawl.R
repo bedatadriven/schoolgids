@@ -39,9 +39,6 @@ executeTask <-  function(task) {
   }
 }
 
-parallel <- FALSE
-
-if(parallel) {
 # Use twice as many workers as we have cores
 # as most of the time is spent waiting on the network
 num_workers <- detectCores() * 2
@@ -52,6 +49,4 @@ cl <- makeCluster(num_workers)
 clusterExport(cl, ls())
 clusterApplyLB(cl, tasks, executeTask)
 stopCluster(cl)
-} else {
-  lapply(tasks, executeTask)
-}
+
