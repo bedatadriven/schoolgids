@@ -26,8 +26,13 @@ executeTask <-  function(task) {
   cat(sprintf("Crawling school %s at %s...\n", task$id, task$url))
   url_file <- file.path("gids", sprintf("%s.csv", task$id))
   if(!file.exists(url_file)) {
-    links <- find_schoolgids(task$url)
-    write.csv(links, url_file, row.names = FALSE)
+    tryCatch({
+      links <- find_schoolgids(task$url)
+      write.csv(links, url_file, row.names = FALSE)
+      
+    }, error = function(e) {
+      cat(sprintf("...ERROR: %\n", e$message))
+    })
     TRUE 
   } else {
     FALSE
