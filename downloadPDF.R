@@ -1,3 +1,5 @@
+library(stringr)
+
 # Path
 gids.path <- "gids"
 
@@ -13,7 +15,24 @@ collectFromPath <- function(path){
 # All pdf links in list without NA
 all <- collectFromPath(gids.path)
 
-# Only URLs
+# Only pdf URLs
 allPdf <- lapply(1L:length(all), function(i) all[[i]]["url"])
 
-#rm(list=ls())
+#' Downloads pdf files with the pdf name
+#' Pdf name is the set of strings after the last part of the url "/"
+#' A sequence is added beginning o the pdf names to avoid overwriting
+#' 
+lapply(1L:length(allPdf), function(n) {
+  lapply(1L:length(allPdf[[n]]), function(i) { 
+    tryCatch({
+      download.file(
+        allPdf[[n]][i,], 
+        destfile = paste(file.path("pdf"), paste(n, i, str_extract(allPdf[[n]][i,], "[^/]+(?=/$|$)"), sep="_"), sep = "/")
+      )
+    }, error = function(e) {
+      cat(sprintf("...ERROR: %s\n", e$message))
+    })
+  })
+})
+
+# -- FIN --
