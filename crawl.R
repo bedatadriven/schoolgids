@@ -41,7 +41,7 @@ executeTask <-  function(task) {
 
 # Use more workers than cores
 # as most of the time is spent waiting on the network
-num_workers <- detectCores() * 4
+num_workers <- detectCores() * 8
 
 cat(sprintf("Using %d workers.\n", num_workers))
 
