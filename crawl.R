@@ -54,7 +54,7 @@ stopCluster(cl)
 
 csv.files <- list.files(path = "gids", pattern = ".csv$", full.names = FALSE)
 v_number <- as.character(substr(csv.files, 1L, 6L))
-pdf.url <- sapply(csv.files, function(file) {
+gids_url <- sapply(csv.files, function(file) {
   csv <- read.csv(file.path("gids", file), nrows = 1L, stringsAsFactors = FALSE)
   if (nrow(csv) == 0L || is.null(csv$url)) {
     NA_character_
@@ -64,7 +64,7 @@ pdf.url <- sapply(csv.files, function(file) {
 })
 
 pdf.url <- data.frame(VESTIGINGSNUMMER = v_number,
-                      url = pdf.url,
+                      url = gids_url,
                       stringsAsFactors = FALSE)
 
 write.csv(pdf.url, file = "school_urls.csv", row.names = FALSE)
