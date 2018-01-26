@@ -50,3 +50,22 @@ clusterExport(cl, ls())
 clusterApplyLB(cl, tasks, executeTask)
 stopCluster(cl)
 
+# Aggregate the individual results into a single table
+
+csv.files <- list.files(path = "gids", pattern = ".csv$", full.names = FALSE)
+v_number <- substr(csv.files, 1L, 6L)
+pdf.url <- sapply(csv.files, function(file) {
+  csv <- read.csv(file.path(csv.path, file), nrows = 1L, stringsAsFactors = FALSE)
+  if (nrow(csv) == 0L || is.null(csv$url)) {
+    NA_character_
+  } else {
+    csv[1, "url"]
+  }
+})
+
+pdf.url <- data.frame(VESTIGINGSNUMMER = v_number,
+                      url = pdf.url,
+                      stringsAsFactors = FALSE)
+
+write.csv(pdf.url, file = "school_urls.csv", row.names = FALSE)
+
