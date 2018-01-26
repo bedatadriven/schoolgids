@@ -1,38 +1,69 @@
-library(stringr)
+library(parallel)
 
 # Path
-gids.path <- "gids"
+csv.path <- "gids"
+csv.files <- list.files(path = csv.path, pattern = ".csv$", full.names = FALSE)
+v_number <- substr(csv.files, 1L, 6L)
 
-# Remove NAs function
-na.omit.list <- function(y) { return(y[!sapply(y, function(x) all(is.na(x)))]) }
+pdf.url <- sapply(csv.files, function(file) {
+  csv <- read.csv(file.path(csv.path, file), nrows = 1L, stringsAsFactors = FALSE)
+  if (nrow(csv) == 0L || is.null(csv$url)) {
+    NA_character_
+  } else {
+    csv[1, "url"]
+  }
+})
 
-collectFromPath <- function(path){
-  filenames <- list.files(path = path, pattern = ".csv$", full.names = FALSE)
-  datalist <- lapply(filenames, function(file) { read.csv(file.path(path, file), stringsAsFactors = FALSE) })
-  na.omit.list(datalist)
+pdf.url <- data.frame(VESTIGINGSNUMMER = v_number,
+                 url = pdf.url,
+                 stringsAsFactors = FALSE)
+
+schools <- read.table("schools.csv", 
+                      sep=";", 
+                      quote="", 
+                      fill = TRUE, 
+                      header = TRUE, 
+                      stringsAsFactors = FALSE)
+
+df <- merge(x = pdf.url, y = schools, by = "VESTIGINGSNUMMER")
+
+write.csv(df, file = "schools_w_url.csv", row.names = FALSE)
+
+### Downloads pdf files with the pdf name
+
+if(!dir.exists("pdf")) {
+  dir.create("pdf")
 }
 
-# All pdf links in list without NA
-all <- collectFromPath(gids.path)
+tasks_url <- lapply(1L:nrow(df), function(i) {
+  list(id = df[i, "VESTIGINGSNUMMER"],
+       url = df[i, "url"])
+})
 
-# Only pdf URLs
-allPdf <- lapply(1L:length(all), function(i) all[[i]]["url"])
+downloadPDF <-  function(task) {
 
-#' Downloads pdf files with the pdf name
-#' Pdf name is the set of strings after the last part of the url "/"
-#' A sequence is added beginning o the pdf names to avoid overwriting
-#' 
-lapply(1L:length(allPdf), function(n) {
-  lapply(1L:length(allPdf[[n]]), function(i) { 
+  cat(sprintf("Downloading pdfs %s at %s...\n", task$id, task$url))
+  url_file <- file.path("pdf", sprintf("%s.pdf", task$id))
+  if(!file.exists(url_file)) {
     tryCatch({
-      download.file(
-        allPdf[[n]][i,], 
-        destfile = paste(file.path("pdf"), paste(n, i, str_extract(allPdf[[n]][i,], "[^/]+(?=/$|$)"), sep="_"), sep = "/")
-      )
+      files <- download.file(task$url, destfile = paste(file.path("pdf"), paste(task$id, ".pdf", sep = ""), sep = "/"))
     }, error = function(e) {
       cat(sprintf("...ERROR: %s\n", e$message))
     })
-  })
-})
+    TRUE
+  } else {
+    FALSE
+  }
+  
+}
+
+# Use more workers than cores
+# as most of the time is spent waiting on the network
+num_workers <- detectCores() * 4
+
+cl <- makeCluster(num_workers, outfile = "")
+clusterExport(cl, ls())
+clusterApplyLB(cl, tasks_url, downloadPDF)
+stopCluster(cl)
 
 # -- FIN --
