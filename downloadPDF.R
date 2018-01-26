@@ -2,28 +2,7 @@ library(parallel)
 
 # Path
 csv.path <- "gids"
-csv.files <- list.files(path = csv.path, pattern = ".csv$", full.names = FALSE)
-v_number <- substr(csv.files, 1L, 6L)
 
-pdf.url <- sapply(csv.files, function(file) {
-  csv <- read.csv(file.path(csv.path, file), nrows = 1L, stringsAsFactors = FALSE)
-  if (nrow(csv) == 0L || is.null(csv$url)) {
-    NA_character_
-  } else {
-    csv[1, "url"]
-  }
-})
-
-pdf.url <- data.frame(VESTIGINGSNUMMER = v_number,
-                 url = pdf.url,
-                 stringsAsFactors = FALSE)
-
-schools <- read.table("schools.csv", 
-                      sep=";", 
-                      quote="", 
-                      fill = TRUE, 
-                      header = TRUE, 
-                      stringsAsFactors = FALSE)
 
 df <- merge(x = pdf.url, y = schools, by = "VESTIGINGSNUMMER")
 

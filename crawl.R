@@ -53,9 +53,9 @@ stopCluster(cl)
 # Aggregate the individual results into a single table
 
 csv.files <- list.files(path = "gids", pattern = ".csv$", full.names = FALSE)
-v_number <- substr(csv.files, 1L, 6L)
+v_number <- as.character(substr(csv.files, 1L, 6L))
 pdf.url <- sapply(csv.files, function(file) {
-  csv <- read.csv(file.path(csv.path, file), nrows = 1L, stringsAsFactors = FALSE)
+  csv <- read.csv(file.path("gids", file), nrows = 1L, stringsAsFactors = FALSE)
   if (nrow(csv) == 0L || is.null(csv$url)) {
     NA_character_
   } else {
