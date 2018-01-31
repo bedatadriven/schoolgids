@@ -3,6 +3,7 @@ library(parallel)
 # Path
 csv.path <- "gids"
 
+source("crawl.R")
 
 df <- merge(x = pdf.url, y = schools, by = "VESTIGINGSNUMMER")
 
