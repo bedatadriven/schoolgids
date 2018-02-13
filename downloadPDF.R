@@ -1,13 +1,9 @@
 library(parallel)
 
-# Path
-csv.path <- "gids"
+### Read list of URLs
+df <- read.csv("school_urls.csv", stringsAsFactors = FALSE)
 
 source("crawl.R")
-
-df <- merge(x = pdf.url, y = schools, by = "VESTIGINGSNUMMER")
-
-write.csv(df, file = "schools_w_url.csv", row.names = FALSE)
 
 ### Downloads pdf files with the pdf name
 
@@ -21,20 +17,23 @@ tasks_url <- lapply(1L:nrow(df), function(i) {
 })
 
 downloadPDF <-  function(task) {
-
-  cat(sprintf("Downloading pdfs %s at %s...\n", task$id, task$url))
-  url_file <- file.path("pdf", sprintf("%s.pdf", task$id))
-  if(!file.exists(url_file)) {
-    tryCatch({
-      files <- download.file(task$url, destfile = paste(file.path("pdf"), paste(task$id, ".pdf", sep = ""), sep = "/"))
-    }, error = function(e) {
-      cat(sprintf("...ERROR: %s\n", e$message))
-    })
-    TRUE
-  } else {
-    FALSE
+  if(!is.na(task$url)) {
+    cat(sprintf("Downloading pdfs %s at %s...\n", task$id, task$url))
+    url_file <- file.path("pdf", sprintf("%s.url", task$id))
+    pdf_file <- file.path("pdf", sprintf("%s.pdf", task$id))
+    
+    if(!file.exists(url_file)) {
+      tryCatch({
+        files <- download.file(task$url, destfile = pdf_file)
+        writeLines(text = task$url, con = url_file)
+      }, error = function(e) {
+        cat(sprintf("...ERROR: %s\n", e$message))
+      })
+      TRUE
+    } else {
+      FALSE
+    }
   }
-  
 }
 
 # Use more workers than cores
@@ -42,7 +41,6 @@ downloadPDF <-  function(task) {
 num_workers <- detectCores() * 4
 
 cl <- makeCluster(num_workers, outfile = "")
-clusterExport(cl, ls())
 clusterApplyLB(cl, tasks_url, downloadPDF)
 stopCluster(cl)
 

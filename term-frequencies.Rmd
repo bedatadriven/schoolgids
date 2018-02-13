@@ -1,0 +1,126 @@
+---
+title: "Document-Term Matrices"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+## Load the data
+
+We have a document term matrix pre-computed that we can load. 
+
+```{r}
+library(tm)
+
+(corpus <- readRDS("schoolgids2017v2.rds"))
+
+
+```
+
+## Define a tokenizer function
+
+The tokenizer splits up our text documents into a list of words. The school guides contain quite a bit of special
+characters that are artifacts from the layout. We want to aggressively eliminate this, as well as URLs, websites,
+and email addresses.
+
+```{r}
+tokenize_guide <- function(text) {
+    # To lowercase 
+    text <- tolower(text)
+  
+    # Remove web addresses
+    text <- gsub(text, pattern="https?://\\S+", replacement = " ")
+    text <- gsub(text, pattern="www\\.\\S+", replacement = " ")
+    
+    # Remove email addresses
+    text <- gsub(text, pattern="\\S+@\\S+", replacement = " ")
+
+    # Remove all non alpha characters and collapse whitespace
+    text <- gsub(text, pattern="[^[:alpha:]]+", replacement = " ")
+
+    unlist(strsplit(as.character(text), split = "[^[:alpha:]]+"))
+}
+```
+
+We can test our tokenizer on lines from a sampling of PDF text:
+
+```{r}
+tokenize_guide("e-mail: oosterboerschool@stichtingpromes.nl website: www.oosterboerschool.nl
+Denominatie: OPENBAAR DALTONONDERWIJS
+Directie Oosterboerschool")
+```
+
+```{r}
+tokenize_guide("Er is een verschil tussen ‘samen werken’ en ‘samenwerken’")
+```
+
+## Construct the matrix
+
+```{r}
+
+(dtm <- DocumentTermMatrix(corpus, control = list(tokenize = tokenize_guide,
+                                                       language = "nl",
+                                                       removeNumbers = TRUE,
+                                                       stopwords = TRUE,
+                                                       stemming = TRUE,
+                                                       wordLengths = c(4, Inf))))
+
+saveRDS(dtm, "schoolgids2017v2_dtm_v2.rds")
+```
+
+The resulting matrix has documents in rows, and terms in columns.
+
+## Reduce to dense matrix
+
+The sparse Document-term matrix includes over a hundred thousand terms, most of which occur in a small number
+of documents.
+
+```{r}
+
+ddtm <- as.matrix(removeSparseTerms(dtm, sparse = 0.95))
+
+dim(ddtm)
+
+```
+
+
+## Normalize the term counts
+
+Right now, our dense matrix contians the number of times each word appears in each school guide. We are interested in which
+words occur more frequency in which schools guides. However, some school guides are much longer than others.
+
+
+```{r}
+
+guide_lengths <- rowSums(ddtm)
+
+hist(guide_lengths)
+
+```
+
+Most school guides are around 5000 words, but there are several hundred that are nearly 10,000 words, and a long
+tail of guide with 15,000 to 20,000 words.
+
+But first we need to remove a few school guides that don't have any words:
+
+```{r}
+empty <- guide_lengths == 0
+meta(corpus[empty], "pdf.url")
+```
+
+A quick check of the PDFs suggests that these PDFs contain scanned images without text.
+
+Finally, we can normalize the matrix by dividing each row by the total number of documents in that row.
+
+```{r}
+
+ndtm <- ddtm[!empty, ] / guide_lengths[!empty] * 10000
+
+saveRDS(ndtm, "schoolgids2017v2_ndtm_v2.rds")
+```
+
+
