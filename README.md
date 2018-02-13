@@ -16,8 +16,8 @@ Next, text was [extracted](extractText.R) from each of the 2974 PDFs that succes
 using the pdftools package, and compiled into a `VCorpus` object suitable for use with the tm package:
 
 * [Full Corpus](https://storage.googleapis.com/schoolgids/schoolgids2017v2/schoolgids2017v2.rds) (103 mb)
-* [500 school sample](https://storage.googleapis.com/schoolgids/schoolgids2017v2/schoolgids2017v2_500.rds)
-* [100 school sample](https://storage.googleapis.com/schoolgids/schoolgids2017v2/schoolgids2017v2_100.rds)
+* [500 school sample](https://storage.googleapis.com/schoolgids/schoolgids2017v2/schoolgids2017v2_500.rds) (18 mb)
+* [100 school sample](https://storage.googleapis.com/schoolgids/schoolgids2017v2/schoolgids2017v2_100.rds) (3.5 mb)
 
 ## Week 1
 
