@@ -1,0 +1,73 @@
+---
+title: "SVM and cluster analysis in school terms"
+output: github_document
+---
+
+* We will continue with the school as the unit of analysis and build on the term-frequency matrices we looked at last week and introduce two machine learning techniques:
+  
+  - **Supervised machine learning** works by "training" a model on a set of "labeled" documents.
+  
+  - **Clustering** is an unsupervised technique to uncover groups in the datasets
+
+## Supervised machine learning
+
+* Most machine learning algorithms require an input set of features
+
+* We need to transform the school guides into a matrix of schools and factors
+
+* Term-frequency matrices are one example of features
+
+* Machine learning algorithms can be very accurate classifiers, they tend to have low explanatory power.
+
+## Training 
+
+Load the full(-ish) the pre-computed normalized terms matrix from last week:
+
+```{r}
+ndtm <- readRDS("schoolgids2017v2_ndtm_v2.rds")
+schools <- read.csv("../schools.csv", sep=";", stringsAsFactors = FALSE)
+ndtm_meta <- merge(data.frame(VESTIGINGSNUMMER = rownames(ndtm)), schools, all.x = TRUE)
+```
+
+The `ndtm` matrix contains a normalized term-frequent matrix for all the schools in our corpus.
+
+```{r}
+ndtm[1:10, 1:20]
+```
+
+* We will split our sample into a training and testing samples
+
+```{r}
+training <- sample(nrow(ndtm), size = 500)
+
+predictors <- ndtm[training, ] 
+response <- as.factor(ndtm_meta$DENOMINATIE[training])
+  
+library(e1071)
+model <- svm(x = predictors, y = response) 
+```
+
+* Now we can use this model to predict the schools in the test set 
+
+
+```{r}
+
+predicted <- predict(model, ndtm[-training, ])
+
+table(predicted)
+```
+
+* Let's see how our model did:
+
+```{r}
+
+correct <- predicted == ndtm_meta$DENOMINATIE[-training]
+table(correct)
+```
+
+Let's look at how we did by category:
+
+```{r}
+
+table(ndtm_meta$DENOMINATIE[-training], correct)
+```
