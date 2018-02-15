@@ -1,4 +1,3 @@
-
 # Text Mining for Education Research Course
 
 This reposistory contains presentations and analyses for a intensive six-week course in
@@ -16,26 +15,55 @@ Next, text was [extracted](extractText.R) from each of the 2974 PDFs that succes
 using the pdftools package, and compiled into a `VCorpus` object suitable for use with the tm package:
 
 * [Full Corpus](https://storage.googleapis.com/schoolgids/schoolgids2017v2/schoolgids2017v2.rds) (103 mb)
+
 * [500 school sample](https://storage.googleapis.com/schoolgids/schoolgids2017v2/schoolgids2017v2_500.rds) (18 mb)
+
 * [100 school sample](https://storage.googleapis.com/schoolgids/schoolgids2017v2/schoolgids2017v2_100.rds) (3.5 mb)
 
 ## Week 1
 
-Topics covered: 
+Topics covered:
+
 * Introduction to R
+
 * Regular Expressions
 
-Sample Analyses:
+Sample analyses:
+
 * Extracting school year from School Guide URL
+
+* [Extracting parental contribution information](week1/parental_contribution.md)
 
 ## Week 2
 
 Topics covered:
+
 * Term Document Matrices
+
 * Writing Functions in R
 
-Sample Analyses:
-* [Constructing a normalized term frequencies matrix](term-frequencies.Rmd)
+Sample analyses:
 
+* [Constructing a normalized term frequencies matrix](week2/term-frequencies.md)
+
+* [Finding correlations between textual terms and CITO scores](week2/correlations_cito.md)
 
 ## Week 3
+
+Topics covered:
+
+* Tokenizing by n-gram
+
+* SVM, cluster analysis
+
+* Data visualization with ggplot
+
+Sample analyses:
+
+* [SVM and cluster analysis in school terms](week3/ml_school_terms.md)
+
+## Week 4
+
+Topics covered:
+
+* Topic Modeling
