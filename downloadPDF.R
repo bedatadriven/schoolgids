@@ -3,7 +3,6 @@ library(parallel)
 ### Read list of URLs
 df <- read.csv("school_urls.csv", stringsAsFactors = FALSE)
 
-source("crawl.R")
 
 ### Downloads pdf files with the pdf name
 
