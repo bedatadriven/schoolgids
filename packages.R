@@ -12,7 +12,7 @@ if(length(uninstalled) > 0) {
 }
 
 # Install pdfbox from GitHub
-if("pdfbox" %in% installed) {
+if(!("pdfbox" %in% installed)) {
   devtools::install_github("hrbrmstr/pdfboxjars")
   devtools::install_github("hrbrmstr/pdfbox")
 }
