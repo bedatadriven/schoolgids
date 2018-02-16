@@ -1,6 +1,9 @@
 
 
-library(tm)
+if(!require(tm)) {
+  install.packages("tm")
+  library(tm)
+}
 
 if(!require(pdfbox)) {
   devtools::install_github("hrbrmstr/pdfboxjars")
