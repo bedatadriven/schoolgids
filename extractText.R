@@ -1,7 +1,7 @@
 
 
 if(!require(tm)) {
-  install.packages("tm")
+  install.packages("tm", repos = "https://cloud.r-project.org")
   library(tm)
 }
 
