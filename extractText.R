@@ -1,16 +1,24 @@
 
+
 library(tm)
-library(pdftools)
+
+if(!require(pdfbox)) {
+  devtools::install_github("hrbrmstr/pdfboxjars")
+  devtools::install_github("hrbrmstr/pdfbox")
+  library(pdfbox)
+}
+
 
 
 # Write all PDFs to text files
 pdfs <- list.files("pdf", pattern = "\\.pdf$")
 for(pdf in pdfs) {
   tryCatch({
+      cat(sprintf("Extracting text from %s...\n", pdf))
       suppressMessages({ 
         vn <- substring(pdf, first = 1, last = 6)
-        text <- pdf_text(pdf = file.path("pdf", pdf))
-        writeLines(text, con = file.path("pdf", sprintf("%s.txt", vn)))
+        text <- extract_text(file.path("pdf", pdf))
+        writeLines(text$text, con = file.path("pdf", sprintf("%s.txt", vn)))
       })
   }, error = function(e) {
       cat(sprintf("Error converting %s...: %s\n", pdf, e$message))

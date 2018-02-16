@@ -11,12 +11,16 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Load the data
 
-We have a document term matrix pre-computed that we can load. 
+The schoolgids corpus has been previously compiled into a single R data file that we can download and load.
 
 ```{r}
 library(tm)
 
-(corpus <- readRDS("schoolgids2017v2.rds"))
+if(!file.exists("schoolgids2017v2.rds")) {
+  download.file("https://storage.googleapis.com/schoolgids/schoolgids2017v2/schoolgids2017v2.rds")
+}
+
+corpus <- readRDS("schoolgids2017v2.rds")
 
 
 ```
