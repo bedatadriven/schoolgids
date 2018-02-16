@@ -5,9 +5,14 @@ if(!require(tm)) {
   library(tm)
 }
 
+if(!require(devtools)) {
+  install.packages("devtools", repos = "https://cloud.r-project.org")
+  library(devtools)
+}
+
 if(!require(pdfbox)) {
-  devtools::install_github("hrbrmstr/pdfboxjars")
-  devtools::install_github("hrbrmstr/pdfbox")
+  install_github("hrbrmstr/pdfboxjars")
+  install_github("hrbrmstr/pdfbox")
   library(pdfbox)
 }
 
