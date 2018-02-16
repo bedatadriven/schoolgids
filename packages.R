@@ -7,7 +7,9 @@ installed <- installed.packages()[,"Package"]
 cran_packages <- c("ggplot2", "rJava", "tm", "devtools", "httr")
 uninstalled <- cran_packages[!(cran_packages %in% installed)]
 
-install.packages(uninstalled, repos = "https://cloud.r-project.org")
+if(length(uninstalled) > 0) {
+  install.packages(uninstalled, repos = "https://cloud.r-project.org")
+}
 
 # Install pdfbox from GitHub
 if("pdfbox" %in% installed) {
