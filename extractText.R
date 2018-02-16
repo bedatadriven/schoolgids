@@ -1,22 +1,8 @@
 
+source("packages.R")
 
-if(!require(tm)) {
-  install.packages("tm", repos = "https://cloud.r-project.org")
-  library(tm)
-}
-
-if(!require(devtools)) {
-  install.packages("devtools", repos = "https://cloud.r-project.org")
-  library(devtools)
-}
-
-if(!require(pdfbox)) {
-  install_github("hrbrmstr/pdfboxjars")
-  install_github("hrbrmstr/pdfbox")
-  library(pdfbox)
-}
-
-
+library(tm)
+library(pdfbox)
 
 # Write all PDFs to text files
 pdfs <- list.files("pdf", pattern = "\\.pdf$")
