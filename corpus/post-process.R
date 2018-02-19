@@ -16,6 +16,9 @@ for(input in inputs) {
   freqs <- table(lines)
   headers <- names(freqs[freqs > 10])
 
+  # Find table of contents...
+  toc_lines <- grepl(lines, pattern = "[.]{5,}")
+  
   # Remove headers
   header_lines <-  (lines %in% headers)
   

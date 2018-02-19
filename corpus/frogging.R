@@ -1,41 +1,20 @@
 
+library(frogr)
 
-library(pdfbox)
+inputs <- list.files("pdf", pattern = "\\.txt.post$")
 
-pages <- extract_text("pdf/13PS00.pdf")
-pages <- strsplit(pages$text, split ="\\r?\\n")
-pages <- lapply(pages, function(lines) {
-    
-  # Remove leading and trailing spaces
-  lines <- gsub(x = lines, pattern = "^\\s+", replacement = "")
-  lines <- gsub(x = lines, pattern = "\\s+$", replacement = "")
-  lines
-})
+# The frog tool can parallelize the analysis of a single document, but
+# doesn't seem to be able to parallelize the processing of multiple documents
+# in sequence. So we split the input set up ourselves into seperate directories,
 
-# Find repeated lines: these are headers and footers
-freqs <- table(unlist(pages))
-num_pages <- length(pages)
-headers <- names(freqs[freqs > (num_pages / 3)])
-headers <- headers[nzchar(headers)]
+num_workers <- max(1, detectCores() - 1)
+batches <- split(inputs, rep(1:num_workers, length.out=length(inputs)))
 
-# Remove headers and footers
-pages <- lapply(pages, function(lines) {
-    
-  # Remove headers
-  header_lines <-  (lines %in% headers)
+for(i in seq_along(batches)) {
+  batch_dir <- sprintf("frog/batch%d", i) 
+  dir.create(batch_dir, recursive = TRUE, showWarnings = FALSE)
+  file.copy(file.path("pdf", batches[[i]]), to = batch_dir)
   
-  # remove page numbers
-  page_numbers <- grepl(lines, pattern = "^pagina \\d", ignore.case = TRUE) |
-                  grepl(lines, pattern = "^\\d+$")
-  
-  lines[ !header_lines & !page_numbers ]
-})
-
-writeLines(unlist(pages), con = "pdf/10GR00.txt.pre")
-
-frogged <- read.table("10GR00.txt.frogged", sep = "\t", fill = TRUE, stringsAsFactors = FALSE, quote = "", 
-                        col.names = c("token_num", "token", "lemma", "morphemes", "pos_complete", "prob", "entity", "chunk", "head_word", "dependency"))
-
-frogged$pos <- str_match(frogged$pos_complete, "([A-Z]+)\\((.+)\\)")[, 2]
-frogged$chunk_index <- cumsum(ifelse(grepl(frogged$chunk, pattern = "^I"), 0, 1))
-frogged$chunk_type <- str_match(frogged$chunk, "[BI]-([A-Z]+)")[, 2]
+  # Launch the batch
+  system2("../lamachine/bin/frog", c(sprintf("--testdir=%s", batch_dir), "--threads=1", "--skip=ap"), wait = FALSE)
+}
