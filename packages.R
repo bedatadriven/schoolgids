@@ -17,6 +17,10 @@ if(!("pdfbox" %in% installed)) {
   devtools::install_github("hrbrmstr/pdfbox")
 }
 
+if(!("frogr" %in% installed)) {
+  devtools::install_github("frogr", username="vanatteveldt")
+}
+
 # Install open NLP models
 nlp_models <- c("openNLPmodels.nl", "openNLPmodels.en")
 if(any(!(nlp_models %in% installed))) {
