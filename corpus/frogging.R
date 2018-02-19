@@ -2,7 +2,7 @@
 
 library(pdfbox)
 
-pages <- extract_text("pdf/10GR00.pdf")
+pages <- extract_text("pdf/13PS00.pdf")
 pages <- strsplit(pages$text, split ="\\r?\\n")
 pages <- lapply(pages, function(lines) {
     
@@ -20,7 +20,7 @@ headers <- headers[nzchar(headers)]
 
 # Remove headers and footers
 pages <- lapply(pages, function(lines) {
-  
+    
   # Remove headers
   header_lines <-  (lines %in% headers)
   
