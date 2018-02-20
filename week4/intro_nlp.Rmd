@@ -1,6 +1,9 @@
 ---
 title: "Introduction to Natural Language Processing (NLP)"
-output: github_document
+output:
+  html_document:
+    toc: true
+    toc_float: true
 ---
 
 In the previous two weeks, we largely looked at the schoolgids corpus using a "bag of words" model. This week, we 
@@ -29,17 +32,7 @@ their parts of speech.
 kleuters <- as.String("Bij de kleuters is de ontwikkeling van de grove motoriek heel belangrijk. Met behulp van 
 allerlei materialen (klimtoestellen, ballen, stelten, springtouw) leren de kinderen bepaalde 
 bewegingen te maken. Vanuit een goed ontwikkelde grove motoriek kan de fijne motoriek 
-zich ontwikkelen. 
-Bij deze ontwikkeling van de fijne motoriek worden materialen gebruikt, die belangrijk zijn 
-voor de voorbereiding van het schrijven zoals (insteek)mozaïek, klei, puzzels, vouwbladen, 
-vlechtwerk en borduurwerk. In groep 2 worden voorbereidende schrijfoefeningen gedaan. 
-Voor het schrijfonderwijs gebruiken wij de methode: “Novoskript”. 
-Het doel van het schrijven is te komen tot een handschrift dat duidelijk en goed leesbaar is, 
-en met een schrijftempo en vormgeving die passen bij het kind. In de hoogste leerjaren gaan 
-de kinderen meer een eigen weg om hun handschrift te ontwikkelen. 
-Het is mogelijk om motorische remedial teaching te geven voor het handschrift en te 
-onderzoeken of er speciaal schrijfgerei nodig is.")
-
+zich ontwikkelen.")
 
 sentences <- annotate(kleuters,  Maxent_Sent_Token_Annotator(language = "nl"))
 
@@ -87,6 +80,41 @@ We can also inspect the individual "parts of speech" text.
 tagged_words(doc)[1:13]
 
 ```
+
+
+# Frog
+
+[Frog](http://languagemachines.github.io/frog/) is an advanced Natural Language Processing suite for Dutch, that provides:
+
+  * tokenizaton
+  * part-of-speech tagging
+  * morphological segmentation 
+  * depency graph construction
+  * chunking
+  * named-entity labelling
+
+Comapred to OpenNLP:
+
+  * Con: More difficult to install and integrate into workflows
+  * Pro: _Far_ more sophisticated and complete
+
+## Calling Frog
+
+```{r}
+library(frogr, quietly = TRUE)
+tokens <- call_frog(as.character(kleuters))
+```
+
+In constrast to OpenNLP, the frogr package produces a table of tokens. It also includes part of speech
+tags, but with more detail:
+
+```{r}
+knitr::kable(tokens[1:13, c("word", "lemma", "morph", "pos", "chunk")])
+
+```
+
+
+
 
 ## Chunking
 
