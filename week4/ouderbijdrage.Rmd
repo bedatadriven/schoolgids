@@ -1,0 +1,177 @@
+---
+title: "Extracting Ouderbijdrage"
+output:
+  html_document: default
+  html_notebook: default
+  pdf_document: default
+---
+
+# Extracting the Ouderbijdrage
+
+In many schools, they request a voluntary ouderbijdrage that varies significantly from school
+to school. This information is only present in the text of the schoolgids.
+
+Our goal is to find the value of the ouderbijdrage in each of the school gids.
+
+An initial review of schoolgids suggests that identifying this information is best
+done at the sentence level. So we will try to develop a probablistic model that can identify
+the sentences which specify the ouderbijdrag.
+
+
+## Libraries
+
+```{r}
+library(e1071)
+library(tm)
+```
+
+## Downloading the data
+
+We will download a sub-sample of school guides that have tokenized by frog, an advanced natural language
+toolkit for Dutch.
+
+```{r}
+datafile <- "schoolgids2017v4_frogged_200.rds"
+if(!file.exists(datafile)) {
+  download.file("https://storage.googleapis.com/schoolgids/schoolgids2017v4/schoolgids2017v4_frogged_200.rds", datafile)
+}
+
+tokens <- readRDS(datafile)
+tokens$sent_id <- paste(tokens$school, tokens$sent, sep="")
+```
+
+## Find all the sentences with numbers
+
+After reviewing a random sample of schoolgids PDFs, we are confident that the ouderbijdrage is always expressed as a numeral, 
+for example "40 euro" and not "vijfig euro", so we will limit our analysis to sentences which contain a token that is a 
+telwoord ('TW') and a numeral:
+
+```{r}
+
+# Compute the numeric value of each telwoord token, handling "," as decimal separators.
+tokens$number <- ifelse(tokens$pos == 'TW', 
+                         as.numeric(gsub(tokens$word, pattern = ",", replacement = ".")),
+                         NA)
+
+sentences_with_numbers <- unique(tokens$sent_id[!is.na(tokens$number)])
+
+tokens <- subset(tokens, sent_id %in% sentences_with_numbers)
+
+```
+
+
+## Building a training sample
+
+First we need to label our dataset. We'll manually review the PDFs to find the sentences that contain
+the ouderbijdrage as a numeric value. We sampled 20 schools from the 200 and divided the PDFs up for manual
+review in [Google Spreadsheet](https://docs.google.com/spreadsheets/d/1E5VmiCcuTqbkk1C3ropHuZAvPEJnUn2kNsr6i5FRXV0/edit#gid=0)
+
+Once the "correct" sentences were identifed that contain the desired information, we load the table back in.
+
+```{r}
+labels <- read.delim("labels.tab", col.names = c("school", "correct_sent"), stringsAsFactors = FALSE)
+```
+
+This table a row for each of the schools we reviewed, and the index of the "correct" sentance that
+contains the ouder bijdrag.
+
+```{r,echo=FALSE}
+knitr::kable(labels)
+```
+
+Before building our model, we will review the unigrams and bigrams that are found in the sentences that
+we labeled as containing the ouderbijdrage. This should provide suggestions as to which features to include
+in our model.
+
+```{r}
+
+# merge the tokens with our labels
+labeled_tokens <- merge(tokens, labels)
+labeled_tokens$correct <- labeled_tokens$sent == labeled_tokens$correct_sent
+
+# find the token rows that were in the flagged sentences
+correct_sentences <- subset(labeled_tokens, sent == correct_sent )
+
+# find the most frequent unigrams
+unigrams <- correct_sentences$lemma
+head(sort(table(unigrams), decreasing = TRUE), n = 30)
+
+
+# find the most frequent bigrams
+bigrams <- unlist(tapply(correct_sentences$lemma, correct_sentences$sent_id, function(tokens) {
+  vapply(ngrams(tokens, 2L), paste, "", collapse = " ")
+}))
+head(sort(table(bigrams), decreasing = TRUE), n = 10)
+
+```
+
+## Build the feature matrix
+
+Using the ideas from our labeled dataset, we will build a feature matrix that includes all
+sentences with a number in the rows, and features of those sentences in the columns.
+
+```{r}
+
+# Split the table of tokens into one table per sentence.
+# This makes it easier to compute features for each sentance using sapply()
+
+sent_list <- split(tokens, tokens$sent_id)
+
+feature_matrix <- data.frame(
+  sent_id = names(sent_list),
+  school = sapply(sent_list, function(s) s$school[1]),
+  sent = sapply(sent_list, function(s) s$sent[1]),
+  per_kind = sapply(sent_list, function(s) grepl(pattern="per kind", paste(s$lemma, collapse=" "))),
+  school_year = sapply(sent_list, function(s) grepl(pattern="2017.2018", paste(s$lemma, collapse=" ")))
+)
+
+for(unigram in c("vaststellen", "verenigingsbijdrage", "€", "ouderbijdrage", "contributie", "bedrag")) {
+  feature_matrix[[unigram]] <- sapply(sent_list, function(s) unigram %in% s$lemma)
+}
+
+# Keep track of our features, which exclude the first three
+# columns containing school and sentance metadata
+
+features <- names(feature_matrix)[-(1:3)]
+```
+
+```{r, echo=FALSE}
+knitr::kable(feature_matrix[1:10, ], row.names = FALSE)
+```
+
+Now we're ready to build our training matrix, that includes only the sentences (rows) from the schools that we 
+manually labled.
+
+```{r}
+
+labeled_matrix <- merge(feature_matrix, labels, all.x = TRUE)
+
+training_matrix <- subset(labeled_matrix, !is.na(correct_sent))
+training_matrix$correct <- training_matrix$sent == training_matrix$correct_sent
+
+summary(training_matrix)
+```
+
+We now use the svm algorithm to build model which can predict which sentences contain
+the ouderbijdrage.
+
+```{r}
+
+model <- svm(training_matrix[, features], as.factor(training_matrix$correct))
+```
+
+Finally, we can use this to predict which of the sentences in the rest of the corpus
+contain the ouderbijdrage, and print the list of sentences that have been identified.
+
+```{r}
+matching <- predict(model, feature_matrix[, features]) == "TRUE"
+
+result <- data.frame(
+  school = feature_matrix$school[matching],
+  text = sapply(sent_list[matching], function(s) paste(s$word, collapse = " "))
+)
+
+knitr::kable(result, row.names = FALSE)
+
+```
+
