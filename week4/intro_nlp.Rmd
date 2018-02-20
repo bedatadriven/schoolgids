@@ -2,8 +2,10 @@
 title: "Introduction to Natural Language Processing (NLP)"
 output:
   html_document:
-    toc: true
-    toc_float: true
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
 ---
 
 In the previous two weeks, we largely looked at the schoolgids corpus using a "bag of words" model. This week, we 
@@ -100,15 +102,19 @@ Compared to OpenNLP:
 
 ## Calling Frog
 
+Before calling frog from R, you must have a frog server running. 
+
 ```{r}
 library(frogr, quietly = TRUE)
 tokens <- call_frog(as.character(kleuters))
 ```
 
+## Parts-of-Speech Tagging
+
 In constrast to OpenNLP, the frogr package produces a table of tokens. It also includes part of speech
 tags, but with more detail:
 
-```{r}
+```{r, echo=FALSE}
 knitr::kable(tokens[1:13, c("word", "lemma", "morph", "pos")])
 
 ```
@@ -142,58 +148,126 @@ complete description of these codes can be found in the paper
 
 A quick outline:
 
-  * Substantieven (N): _schoolgebouw_, _vragen_, _gegevens_
-  * Adjectieven (ADJ): _belangrijk_, _goed_, _grove_, _fijne_
-  * Werkwoorden (WW): _leren_, _is_, _maken_
-  * Telwoorden (TW): _zoveel_, _twee_, _24_, _1988_
-  * Voornaamwoorden (VNW): _deze_, _ons_, _niemand_, _we_
-  * Lidwoorden (LID): _de_, _het_
-  * Voorzetsels (VZ): _in_, _tussen_, _op de hoogte_, _ten behoeve van_, _van_
-  * Voegwoorden (VG): _en_, _dat_, _of_
-  * Bijwoorden (BW): _waarin_, _bijvoorbeeld_, _niet_
-  * Tussenwerpsels (TSW): _o_
-  * Leestekens (LET): period, comma, quotation marks, etc
-  * Speciale tokens (SPEC): bullet points, everything else
+| Code | Part of Speech    | Example                                        |
+|------|-------------------|------------------------------------------------|
+| N    | Substantieven     | schoolgebouw, vragen, gegevens                 |
+| ADJ   | Adjectieven      | belangrijk, goed, grove, fijne                 |
+| WW   | Werkwoorden       | leren, is, maken                               |
+| TW   | Telwoorden        | zoveel, twee, 24, 1988                         |
+| VNW  | Voornaamwoordn    | deze, ons, niemand, we                         |
+| LID  | Lidwoorden        | zoveel, twee, 24, 1988                         |
+| VZ   | Voorzetsels       | in, tussen, op de hoogte, ten behoeve van, van |
+| VG   | Voegwoorden       | en, dat, of                                    |
+| BW   | Bijwoorden        | waarin, bijvoorbeeld, niet                     |
+| TSW  | Tussenwerpsels    | o                                              |
+| LET  | Leestekens        | period, comma, quotation marks, etc            |
+| SPEC | Special tokens    | Everything else !                              |
 
-Frog further subdivides parts of speech. For example, substantieven are have five properties:
+Frog further subdivides parts of speech. For details on these subdivisions, see the 
+paper referenced above. But it is worth briefly looking at the additional
+properties of _substantieven_ as an example.
 
-```{.r}
+### Substantieven
+
+_Substantieven_, or nouns, have up to five additional properties provided by frog:
+
+```{r}
 knitr::kable(tokens[tokens$majorpos == 'N', c("word", "pos")])
 ```
+
+#### N-Type
+
+The first property distinguishes between _soortbepalende_ (soort) en _individualiserende_ (eigen) substantieven. 
+In English, these types are called "common nouns" and "proper nouns".
+
+  * **eigen**: Names of people, places, and things that are normally capitalized.
+  * **soort**: All other nouns.
+
+#### Getal
+
+The second property distinguishes between the singular and plural forms of nouns.
+
+   * **ev**: enkelvoud (singular)
+   * **mv**: meervouden (plural)
+   
+#### Graad
+
+Tags nouns in their diminutive form (dimin) or (basis)
+
+> Diminutiefvormen zijn gemarkeerd door een suffix (-je, -tje, -pje,
+> -ke, ...). Bij afwezigheid van het suffix wordt de waarde ‘basis’ toegekend; 
+> die waarde wordt ook toegekend aan de substantieven die geen diminutiefvorm kunnen hebben
+> (gebergte, vee). Substantieven die steeds een
+> diminutiefsuffix hebben (ootje, nippertje) krijgen de waarde ‘diminutief’, behalve wanneer ze niet het typisch
+> diminutieve kenmerk van onzijdigheid vertonen, d.w.z. wanneer ze —in het enkelvoud— niet combineren met
+> het/dat/dit/ons maar met de/die/deze/onze; dat is soms het geval bij persoonsnamen, als in die/?dat Nelleke toch.
+
+#### Genus
+
+>  Bij POS tagging maken we alleen het onderscheid tussen zijdige en onzijdige substantieven; de verdere
+> differentiatie van de zijdige substantieven in masculiene en feminiene wordt dus niet gemaakt. De zijdige
+> substantieven zijn die welke in het enkelvoud determiners nemen als de/die/deze/onze, terwijl de onzijdige determiners
+> nemen als het/dat/dit/ons. In combinaties als de laatste drie jaar en om de vier uur krijgen jaar en uur
+> ondanks de aanwezigheid van de toch hun gebruikelijke waarde onzijdig. Het lidwoord is hier namelijk niet het
+> zijdige enkelvoudige de maar het meervoudige de.
+
+#### Namvaal
+
+  * Standaard (nominatief, oblique)
+  * Genatief ("_ouders_ taak")
 
 ## Chunking
 
 Chunk tags are assigned to groups of words that belong together (i.e. phrases). 
+
 The most common phrases are the noun phrase (NP, for example the black cat) and the verb phrase (VP, for example is purring) 
 [source](https://www.clips.uantwerpen.be/pages/mbsp-tags).
 
-**Tag**|**Description**|**Words**|**Example**
-:-----:|:-----:|:-----:|:-----:
-NP|noun phrase |DT+RB+JJ+NN + PR|the strange bird
-PP|prepositional phrase|TO+IN|in between
-VP |verb phrase |RB+MD+VB |was looking
-ADVP|adverb phrase|RB|also
-ADJP|adjective phrase |CC+RB+JJ|warm and cosy
-SBAR|subordinating conjunction |IN|whether or not
-PRT|particle|RP|up the stairs
-INTJ|interjection|UH|hello
-
-Unfortunately, we have not been able to locate an OpenNLP chunking model for the Dutch language. There has been
-work in this area, see "Spranger, Kristina & Heid, Ulrich. (2002). A Dutch Chunker as a Basis for the Extraction of Linguistic Knowledge. 93-109" from
-the conference "Computational Linguistics in the Netherlands."
-
-For this example, we'll look at some text from my high school:
+```{r}
+tokens <- call_frog("De Martin Luther Kingschool biedt de kinderen een brede ontwikkeling. Het onderwijs is             
+zodanig ingericht dat naast de cognitieve ook de sociaal-emotionele, de creatieve en de             
+motorische ontwikkeling gestimuleerd worden.")
+```
 
 ```{r}
-
-text <- as.String("The Wellsboro Area School District will prepare all students for lifelong success through excellence in education.")
-
-doc <- AnnotatedPlainTextDocument(text, annotate(text, 
-                  list(Maxent_Sent_Token_Annotator(language = "en"),
-                        Maxent_Word_Token_Annotator(language = "en"),
-                        Maxent_POS_Tag_Annotator(language = "en"),
-                        Maxent_Chunk_Annotator(language = "en"))))
-
-chunked_sents(doc)
-
+knitr::kable(tokens[, c("word", "pos", "chunk")])
 ```
+
+## Named-Entity Recognition
+
+```{r}
+knitr::kable(tokens[1:5, c("word", "pos", "ner")])
+```
+
+Frog supports several types of Named entities: 
+ 
+  * Person (PER)
+  * Organization (ORG)
+  * Location (LOC)
+  * Product (PRO)
+  * Event (EVE)
+  * Miscellaneous (MISC)
+  
+## Lemitization
+
+Lemitization is a more sophisticated version of stemming based on dictionaries and parts of speech tagging.
+
+```{r}
+knitr::kable(tokens[1:5, c("word", "majorpos", "lemma")])
+```
+
+The lemmatized form is defined as follows:
+  * For nouns, the lemma is the singular form
+  * For verbs, the lemma is the infinitive
+  
+## Parsing
+
+Frog also includes a dependency parser, which attempts to understand the sentence.
+
+
+```{r}
+tokens <- call_frog("Onze school is blauw")
+knitr::kable(tokens[, c("position", "word", "majorpos", "parse1", "parse2")])
+```
+
+
