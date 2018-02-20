@@ -1,6 +1,7 @@
 
-source("scrape.R")
 library(parallel)
+
+source("crawl-funs.R")
 
 schools <- read.table("schools.csv", 
                       sep=";", 
@@ -11,8 +12,8 @@ schools <- read.table("schools.csv",
 
 
 
-if(!dir.exists("gids")) {
-  dir.create("gids")
+if(!dir.exists("pdf")) {
+  dir.create("pdf")
 }
 
 tasks <- lapply(1:nrow(schools), function(i) {
@@ -22,9 +23,9 @@ tasks <- lapply(1:nrow(schools), function(i) {
 
 executeTask <-  function(task) {
   
-  source("scrape.R")
+  source("crawl-funs.R")
   cat(sprintf("Crawling school %s at %s...\n", task$id, task$url))
-  url_file <- file.path("gids", sprintf("%s.csv", task$id))
+  url_file <- file.path("pdf", sprintf("%s.csv", task$id))
   if(!file.exists(url_file)) {
     tryCatch({
       links <- find_schoolgids(task$url)
@@ -41,7 +42,7 @@ executeTask <-  function(task) {
 
 # Use more workers than cores
 # as most of the time is spent waiting on the network
-num_workers <- detectCores() * 8
+num_workers <- detectCores() * 1
 
 cat(sprintf("Using %d workers.\n", num_workers))
 
@@ -52,10 +53,10 @@ stopCluster(cl)
 
 # Aggregate the individual results into a single table
 
-csv.files <- list.files(path = "gids", pattern = ".csv$", full.names = FALSE)
+csv.files <- list.files(path = "pdf", pattern = ".csv$", full.names = FALSE)
 v_number <- as.character(substr(csv.files, 1L, 6L))
 gids_url <- sapply(csv.files, function(file) {
-  csv <- read.csv(file.path("gids", file), nrows = 1L, stringsAsFactors = FALSE)
+  csv <- read.csv(file.path("pdf", file), nrows = 1L, stringsAsFactors = FALSE)
   if (nrow(csv) == 0L || is.null(csv$url)) {
     NA_character_
   } else {

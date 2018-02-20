@@ -53,7 +53,7 @@ nrow(noun_tokens)
 The frogr package provides a function for turning 
 
 ```{r}
-dtm <- frogr::create_dtm(docs = tokens$school, terms = tokens$lemma)
+dtm <- frogr::create_dtm(docs = noun_tokens$school, terms = noun_tokens$lemma)
 dtm
 ```
 
