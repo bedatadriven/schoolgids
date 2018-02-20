@@ -30,7 +30,7 @@ results <- lapply(outputs, function(output) {
   table$sent[table$position == 1] = 1:sum(table$position == 1)
   if (nrow(table) > 0 && is.na(table$sent[1])) 
     table$sent[1] = 1
-  table$sent = na.locf(table$sent)
+  table$sent = zoo::na.locf(table$sent)
   table$chunk_index <- bioIndex(table$chunk)
   table$chunk_type <- bioType(table$chunk)
   table$ner_index <- bioIndex(table$ner)
