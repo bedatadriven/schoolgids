@@ -109,12 +109,34 @@ In constrast to OpenNLP, the frogr package produces a table of tokens. It also i
 tags, but with more detail:
 
 ```{r}
-knitr::kable(tokens[1:13, c("word", "lemma", "morph", "pos", "chunk")])
+knitr::kable(tokens[1:13, c("word", "lemma", "morph", "pos")])
 
 ```
 
+The parts-of-speech codes are slightly different than OpenNLP and include more subdivisions. The most
+complete description of these codes can be found in the paper
+[Part of Speech Tagging en Lemmatisering](http://www.hum.uu.nl/medewerkers/p.monachesi/papers/vaneynde.pdf).
 
+A quick outline:
 
+  * Substantieven (N): _schoolgebouw_, _vragen_, _gegevens_
+  * Adjectieven (ADJ): _belangrijk_, _goed_, _grove_, _fijne_
+  * Werkwoorden (WW): _leren_, _is_, _maken_
+  * Telwoorden (TW): _zoveel_, _twee_, _24_, _1988_
+  * Voornaamwoorden (VNW): _deze_, _ons_, _niemand_, _we_
+  * Lidwoorden (LID): _de_, _het_
+  * Voorzetsels (VZ): _in_, _tussen_, _op de hoogte_, _ten behoeve van_, _van_
+  * Voegwoorden (VG): _en_, _dat_, _of_
+  * Bijwoorden (BW): _waarin_, _bijvoorbeeld_, _niet_
+  * Tussenwerpsels (TSW): _o_
+  * Leestekens (LET): period, comma, quotation marks, etc
+  * Speciale tokens (SPEC): bullet points, everything else
+
+Frog further subdivides parts of speech. For example, substantieven are have five properties:
+
+```{.r}
+knitr::kable(tokens[tokens$majorpos == 'N', c("word", "pos")])
+```
 
 ## Chunking
 
@@ -152,45 +174,3 @@ doc <- AnnotatedPlainTextDocument(text, annotate(text,
 chunked_sents(doc)
 
 ```
-
-## Dealing with Full Documents
-
-```{r}
-
-text <- as.String("
-Leerplicht  
-In een aantal gevallen kunnen kinderen worden vrijgesteld van leerplicht. Dit noemen wij 
-verlof. Kinderen hoeven voor een dag of voor een beperkt aantal dagen dan niet naar school. 
-Het is de verantwoordelijkheid van de ouders om terughoudend om dit verlof aan te vragen. 
-Vraag niet meer verlof aan dan echt noodzakelijk. In het algemeen is het niet in het belang 
-van het kind school te moeten missen.
- 
-5.2. De uitdagende leeromgeving 
- 
-De leerlingen hebben niet altijd vaste werkplekken. De werkplekken kunnen worden 
-aangepast aan de behoeften van de leerlingen. De groepen hebben zo de mogelijkheid om 
-hoeken in de klassen te creëren, terwijl de hogere groepen eventueel kunnen worden 
-ingericht als flexibele werk- en onderzoekruimtes. Tevens geven een aantal eigentijdse 
-methodes invulling aan de leeromgeving. In iedere groep zijn er hoeken gecreëerd om te 
-kunnen samen leren, zelf leren en leren leren. 
- 
-Didactische uitgangspunten  
-• Wij werken vanuit concrete leerlijnen, leerdoelen en leerstrategieën  
-• Leerkrachten dagen kinderen uit zich verder te ontwikkelen  
-• Leerkrachten creëren een rijke leeromgeving  
-• Kinderen leren vanuit succeservaringen. Hierop is de begeleiding van de leerkracht gericht  
-• De leerling is medeverantwoordelijk voor het eigen leerproces  
-• De leerkracht stelt zich op als begeleider en leider van de leerling  
-")
-
-sannot <- annotate(text, Maxent_Sent_Token_Annotator(language = "nl", probs = TRUE))
-
-
-doc <- AnnotatedPlainTextDocument(text, annotate(text, 
-                  list(Maxent_Sent_Token_Annotator(language = "nl",),
-                        Maxent_Word_Token_Annotator(language = "nl"),
-                        Maxent_POS_Tag_Annotator(language = "nl"))))
-
-
-```
-
