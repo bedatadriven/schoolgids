@@ -1,0 +1,59 @@
+---
+title: "Term frequencies using NLP"
+output: html_notebook
+---
+
+# Constructing Term Frequencies
+
+## Libraries used
+
+```{r}
+library(tm)
+library(frogr)
+library(Matrix)
+```
+
+## Downloading the data
+
+```{r}
+datafile <- "schoolgids2017v4_frogged_200.rds"
+if(!file.exists(datafile)) {
+  download.file("https://storage.googleapis.com/schoolgids/schoolgids2017v4/schoolgids2017v4_frogged_200.rds", datafile)
+}
+tokens <- readRDS(datafile)
+```
+
+The table is a cleaned-up version of the frog output:
+
+```{r}
+knitr::kable(subset(tokens, school == '16JK00' & sent == 51))
+```
+It contains the following columns:
+
+  * school: the Vestigsnummer of the school 
+  * sent: the index of the sentence within the school guide
+  * position: the index of the token within the sentence
+  * word: the original text of the word
+  * lemma: the lemmatized version of the token
+  * pos: part of speach
+  * ner: the index of the named entity within the document, or NA if it is not a named entity
+  * ner_type: the type of named entity
+  * chunk_index: the index of chunk within the document
+  * chunk_type: the type of chunk
+
+# Subsetting the token list
+
+We can select only the nouns from the list of tokens
+
+```{r}
+noun_tokens <- subset(tokens, tokens$pos == 'N')
+nrow(noun_tokens)
+```
+
+The frogr package provides a function for turning 
+
+```{r}
+dtm <- frogr::create_dtm(docs = tokens$school, terms = tokens$lemma)
+dtm
+```
+
