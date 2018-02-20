@@ -14,11 +14,11 @@ to handle some of the peculiarieties of websites in this sector.
 Next, text was [extracted](extractText.R) from each of the 2974 PDFs that successfully downloaded
 using the pdftools package, and compiled into a `VCorpus` object suitable for use with the tm package:
 
-* [Full Corpus](https://storage.googleapis.com/schoolgids/schoolgids2017v2/schoolgids2017v2.rds) (103 mb)
+* [Full Corpus](https://storage.googleapis.com/schoolgids/schoolgids2017v4/schoolgids2017v4.rds) (103 mb)
 
-* [500 school sample](https://storage.googleapis.com/schoolgids/schoolgids2017v2/schoolgids2017v2_500.rds) (18 mb)
+* [500 school sample](https://storage.googleapis.com/schoolgids/schoolgids2017v4/schoolgids2017v4_500.rds) (18 mb)
 
-* [100 school sample](https://storage.googleapis.com/schoolgids/schoolgids2017v2/schoolgids2017v2_100.rds) (3.5 mb)
+* [100 school sample](https://storage.googleapis.com/schoolgids/schoolgids2017v4/schoolgids2017v4_100.rds) (3.5 mb)
 
 ## Week 1
 
