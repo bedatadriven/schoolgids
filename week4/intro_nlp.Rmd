@@ -93,7 +93,7 @@ tagged_words(doc)[1:13]
   * chunking
   * named-entity labelling
 
-Comapred to OpenNLP:
+Compared to OpenNLP:
 
   * Con: More difficult to install and integrate into workflows
   * Pro: _Far_ more sophisticated and complete
@@ -116,6 +116,29 @@ knitr::kable(tokens[1:13, c("word", "lemma", "morph", "pos")])
 The parts-of-speech codes are slightly different than OpenNLP and include more subdivisions. The most
 complete description of these codes can be found in the paper
 [Part of Speech Tagging en Lemmatisering](http://www.hum.uu.nl/medewerkers/p.monachesi/papers/vaneynde.pdf).
+
+### Abbreviations used in frog POS
+
+| Dutch generic | English |
+|:--|:--|
+| ADJ | Adjective |
+| BW | Adverb |
+| LET | Punctuation |
+| LID | Determiner |
+| N(eigen) | Proper noun |
+| N(soort) | Common noun |
+| SPEC(afgebr) | Partial words |
+| SPEC(onverst) | Incomprehensible words |
+| SPEC(vreemd) | Foreign words |
+| SPEC(deeleigen) | Part-of-whole words |
+| SPEC(afk) | Abbreviations |
+| SPEC(symb) | Symbols |
+| TSW | Interjection |
+| TW | Cardinal/ordinal |
+| VG | Conjunction |
+| VNW | Pronoun |
+| VZ | Preposition |
+| WW | Verb |
 
 A quick outline:
 

@@ -24,17 +24,7 @@ Now we can use these models to divide text into sentences, and then tag words wi
 kleuters <- as.String("Bij de kleuters is de ontwikkeling van de grove motoriek heel belangrijk. Met behulp van 
 allerlei materialen (klimtoestellen, ballen, stelten, springtouw) leren de kinderen bepaalde 
 bewegingen te maken. Vanuit een goed ontwikkelde grove motoriek kan de fijne motoriek 
-zich ontwikkelen. 
-Bij deze ontwikkeling van de fijne motoriek worden materialen gebruikt, die belangrijk zijn 
-voor de voorbereiding van het schrijven zoals (insteek)mozaïek, klei, puzzels, vouwbladen, 
-vlechtwerk en borduurwerk. In groep 2 worden voorbereidende schrijfoefeningen gedaan. 
-Voor het schrijfonderwijs gebruiken wij de methode: “Novoskript”. 
-Het doel van het schrijven is te komen tot een handschrift dat duidelijk en goed leesbaar is, 
-en met een schrijftempo en vormgeving die passen bij het kind. In de hoogste leerjaren gaan 
-de kinderen meer een eigen weg om hun handschrift te ontwikkelen. 
-Het is mogelijk om motorische remedial teaching te geven voor het handschrift en te 
-onderzoeken of er speciaal schrijfgerei nodig is.")
-
+zich ontwikkelen.")
 
 sentences <- annotate(kleuters,  Maxent_Sent_Token_Annotator(language = "nl"))
 
@@ -42,15 +32,9 @@ sentences <- annotate(kleuters,  Maxent_Sent_Token_Annotator(language = "nl"))
 kleuters[sentences]
 ```
 
-    ## [1] "Bij de kleuters is de ontwikkeling van de grove motoriek heel belangrijk."                                                                                                                                            
-    ## [2] "Met behulp van \nallerlei materialen (klimtoestellen, ballen, stelten, springtouw) leren de kinderen bepaalde \nbewegingen te maken."                                                                                 
-    ## [3] "Vanuit een goed ontwikkelde grove motoriek kan de fijne motoriek \nzich ontwikkelen."                                                                                                                                 
-    ## [4] "Bij deze ontwikkeling van de fijne motoriek worden materialen gebruikt, die belangrijk zijn \nvoor de voorbereiding van het schrijven zoals (insteek)mozaïek, klei, puzzels, vouwbladen, \nvlechtwerk en borduurwerk."
-    ## [5] "In groep 2 worden voorbereidende schrijfoefeningen gedaan."                                                                                                                                                           
-    ## [6] "Voor het schrijfonderwijs gebruiken wij de methode: “Novoskript”."                                                                                                                                                    
-    ## [7] "Het doel van het schrijven is te komen tot een handschrift dat duidelijk en goed leesbaar is, \nen met een schrijftempo en vormgeving die passen bij het kind."                                                       
-    ## [8] "In de hoogste leerjaren gaan \nde kinderen meer een eigen weg om hun handschrift te ontwikkelen."                                                                                                                     
-    ## [9] "Het is mogelijk om motorische remedial teaching te geven voor het handschrift en te \nonderzoeken of er speciaal schrijfgerei nodig is."
+    ## [1] "Bij de kleuters is de ontwikkeling van de grove motoriek heel belangrijk."                                                           
+    ## [2] "Met behulp van \nallerlei materialen (klimtoestellen, ballen, stelten, springtouw) leren de kinderen bepaalde \nbewegingen te maken."
+    ## [3] "Vanuit een goed ontwikkelde grove motoriek kan de fijne motoriek \nzich ontwikkelen."
 
 Parts of Speech
 ---------------
@@ -120,6 +104,111 @@ tagged_words(doc)[1:13]
     ## belangrijk/Adj
     ## ./Punc
 
+Frog
+====
+
+[Frog](http://languagemachines.github.io/frog/) is an advanced Natural Language Processing suite for Dutch, that provides:
+
+-   tokenizaton
+-   part-of-speech tagging
+-   morphological segmentation
+-   depency graph construction
+-   chunking
+-   named-entity labelling
+
+Compared to OpenNLP:
+
+-   Con: More difficult to install and integrate into workflows
+-   Pro: *Far* more sophisticated and complete
+
+Calling Frog
+------------
+
+``` r
+library(frogr, quietly = TRUE)
+```
+
+    ## 
+    ## Attaching package: 'zoo'
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     as.Date, as.Date.numeric
+
+``` r
+tokens <- call_frog(as.character(kleuters))
+```
+
+    ## Frogging document 1: 288 characters
+
+In constrast to OpenNLP, the frogr package produces a table of tokens. It also includes part of speech tags, but with more detail:
+
+``` r
+knitr::kable(tokens[1:13, c("word", "lemma", "morph", "pos")])
+```
+
+| word         | lemma        | morph                    | pos                          |
+|:-------------|:-------------|:-------------------------|:-----------------------------|
+| Bij          | bij          | \[bij\]                  | VZ(init)                     |
+| de           | de           | \[de\]                   | LID(bep,stan,rest)           |
+| kleuters     | kleuter      | \[kleuter\]\[s\]         | N(soort,mv,basis)            |
+| is           | zijn         | \[zijn\]                 | WW(pv,tgw,ev)                |
+| de           | de           | \[de\]                   | LID(bep,stan,rest)           |
+| ontwikkeling | ontwikkeling | \[ont\]\[wikkel\]\[ing\] | N(soort,ev,basis,zijd,stan)  |
+| van          | van          | \[van\]                  | VZ(init)                     |
+| de           | de           | \[de\]                   | LID(bep,stan,rest)           |
+| grove        | grof         | \[grof\]\[e\]            | ADJ(prenom,basis,met-e,stan) |
+| motoriek     | motoriek     | \[motor\]\[iek\]         | N(soort,ev,basis,zijd,stan)  |
+| heel         | heel         | \[heel\]                 | ADJ(vrij,basis,zonder)       |
+| belangrijk   | belangrijk   | \[belang\]\[rijk\]       | ADJ(vrij,basis,zonder)       |
+| .            | .            | \[.\]                    | LET()                        |
+
+The parts-of-speech codes are slightly different than OpenNLP and include more subdivisions. The most complete description of these codes can be found in the paper [Part of Speech Tagging en Lemmatisering](http://www.hum.uu.nl/medewerkers/p.monachesi/papers/vaneynde.pdf).
+
+### Abbreviations used in frog POS
+
+| Dutch generic   | English                |
+|:----------------|:-----------------------|
+| ADJ             | Adjective              |
+| BW              | Adverb                 |
+| LET             | Punctuation            |
+| LID             | Determiner             |
+| N(eigen)        | Proper noun            |
+| N(soort)        | Common noun            |
+| SPEC(afgebr)    | Partial words          |
+| SPEC(onverst)   | Incomprehensible words |
+| SPEC(vreemd)    | Foreign words          |
+| SPEC(deeleigen) | Part-of-whole words    |
+| SPEC(afk)       | Abbreviations          |
+| SPEC(symb)      | Symbols                |
+| TSW             | Interjection           |
+| TW              | Cardinal/ordinal       |
+| VG              | Conjunction            |
+| VNW             | Pronoun                |
+| VZ              | Preposition            |
+| WW              | Verb                   |
+
+A quick outline:
+
+-   Substantieven (N): *schoolgebouw*, *vragen*, *gegevens*
+-   Adjectieven (ADJ): *belangrijk*, *goed*, *grove*, *fijne*
+-   Werkwoorden (WW): *leren*, *is*, *maken*
+-   Telwoorden (TW): *zoveel*, *twee*, *24*, *1988*
+-   Voornaamwoorden (VNW): *deze*, *ons*, *niemand*, *we*
+-   Lidwoorden (LID): *de*, *het*
+-   Voorzetsels (VZ): *in*, *tussen*, *op de hoogte*, *ten behoeve van*, *van*
+-   Voegwoorden (VG): *en*, *dat*, *of*
+-   Bijwoorden (BW): *waarin*, *bijvoorbeeld*, *niet*
+-   Tussenwerpsels (TSW): *o*
+-   Leestekens (LET): period, comma, quotation marks, etc
+-   Speciale tokens (SPEC): bullet points, everything else
+
+Frog further subdivides parts of speech. For example, substantieven are have five properties:
+
+``` r
+knitr::kable(tokens[tokens$majorpos == 'N', c("word", "pos")])
+```
+
 Chunking
 --------
 
@@ -164,42 +253,3 @@ chunked_sents(doc)
     ##   (PP in/IN)
     ##   (NP education/NN)
     ##   ./.)
-
-Dealing with Full Documents
----------------------------
-
-``` r
-text <- as.String("
-Leerplicht  
-In een aantal gevallen kunnen kinderen worden vrijgesteld van leerplicht. Dit noemen wij 
-verlof. Kinderen hoeven voor een dag of voor een beperkt aantal dagen dan niet naar school. 
-Het is de verantwoordelijkheid van de ouders om terughoudend om dit verlof aan te vragen. 
-Vraag niet meer verlof aan dan echt noodzakelijk. In het algemeen is het niet in het belang 
-van het kind school te moeten missen.
- 
-5.2. De uitdagende leeromgeving 
- 
-De leerlingen hebben niet altijd vaste werkplekken. De werkplekken kunnen worden 
-aangepast aan de behoeften van de leerlingen. De groepen hebben zo de mogelijkheid om 
-hoeken in de klassen te creëren, terwijl de hogere groepen eventueel kunnen worden 
-ingericht als flexibele werk- en onderzoekruimtes. Tevens geven een aantal eigentijdse 
-methodes invulling aan de leeromgeving. In iedere groep zijn er hoeken gecreëerd om te 
-kunnen samen leren, zelf leren en leren leren. 
- 
-Didactische uitgangspunten  
-• Wij werken vanuit concrete leerlijnen, leerdoelen en leerstrategieën  
-• Leerkrachten dagen kinderen uit zich verder te ontwikkelen  
-• Leerkrachten creëren een rijke leeromgeving  
-• Kinderen leren vanuit succeservaringen. Hierop is de begeleiding van de leerkracht gericht  
-• De leerling is medeverantwoordelijk voor het eigen leerproces  
-• De leerkracht stelt zich op als begeleider en leider van de leerling  
-")
-
-sannot <- annotate(text, Maxent_Sent_Token_Annotator(language = "nl", probs = TRUE))
-
-
-doc <- AnnotatedPlainTextDocument(text, annotate(text, 
-                  list(Maxent_Sent_Token_Annotator(language = "nl",),
-                        Maxent_Word_Token_Annotator(language = "nl"),
-                        Maxent_POS_Tag_Annotator(language = "nl"))))
-```

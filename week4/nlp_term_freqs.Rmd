@@ -1,6 +1,6 @@
 ---
 title: "Term frequencies using NLP"
-output: html_notebook
+output: github_document
 ---
 
 # Constructing Term Frequencies
@@ -35,7 +35,7 @@ It contains the following columns:
   * position: the index of the token within the sentence
   * word: the original text of the word
   * lemma: the lemmatized version of the token
-  * pos: part of speach
+  * pos: part of speech
   * ner: the index of the named entity within the document, or NA if it is not a named entity
   * ner_type: the type of named entity
   * chunk_index: the index of chunk within the document
