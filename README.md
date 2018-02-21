@@ -32,8 +32,6 @@ Sample analyses:
 
 * Extracting school year from School Guide URL
 
-* [Extracting parental contribution information](week1/parental_contribution.md)
-
 ## Week 2
 
 Topics covered:
@@ -63,6 +61,16 @@ Sample analyses:
 * [SVM and cluster analysis in school terms](week3/ml_school_terms.md)
 
 ## Week 4
+
+Topics covered:
+
+* [Natural Language Processing (NLP)](week4/intro_nlp.md)
+
+Sample analyses:
+
+* [Extracting parental contribution information](week4/ouderbijdrage.md)
+
+## Week 5
 
 Topics covered:
 
