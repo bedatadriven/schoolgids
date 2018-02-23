@@ -1,3 +1,3 @@
-# The current working pipeline for the texts
+# The pipeline for the corpus
 
-![corpus](corpus/corpus_diagram.png)
+![corpus_diagram](corpus_diagram.png)
