@@ -1,0 +1,153 @@
+---
+title: "Classifying text with RTextTools package"
+output: github_document
+---
+
+```{r create_dtm func source from frogr, include = FALSE, message = FALSE}
+library(zoo)
+library(Matrix)
+library(tm)
+library(plyr)
+create_dtm <- function (docs, terms, freqs = rep(1, length(terms)), weighting = weightTf) 
+{
+    d = data.frame(doc = docs, term = terms, freq = freqs)
+    d = aggregate(freq ~ doc + term, d, FUN = "sum")
+    docnames = unique(d$doc)
+    termnames = unique(d$term)
+    sm = spMatrix(nrow = length(docnames), ncol = length(termnames), 
+        match(d$doc, docnames), match(d$term, termnames), d$freq)
+    rownames(sm) = docnames
+    colnames(sm) = termnames
+    as.DocumentTermMatrix(sm, weighting = weighting)
+}
+```
+
+Why machine learning classification?
+
+* The manual qualitative coding is time consuming in the social sciences
+
+* Supervised leaning with the textual data can achieve a new different coding performance
+
+* It does not the substitute of human coder
+
+RTextTools was designed to make machine learning accessible by providing a start-to-finish product in less than 10 steps.
+
+```{r, message=FALSE}
+library(RTextTools)
+library(tidyverse)
+library(magrittr)
+```
+
+Our frogged data (with 200 samples).
+```{r}
+datafile <- "schoolgids2017v4_frogged_200.rds"
+if(!file.exists(datafile)) {
+  download.file("https://storage.googleapis.com/schoolgids/schoolgids2017v4/schoolgids2017v4_frogged_200.rds", datafile)
+}
+tokens <- readRDS(datafile)
+```
+
+Tokens nouns.
+```{r}
+tokens_nouns <- tokens[tokens$pos == "N", c("school", "lemma")]
+stop_nouns <- c("kind", "school", "groep", "leerling", "ouder", "onderwijs", "leerkracht", "jaar", "schooljaar", "informatie", "activiteit", "ondersteuning", "basisschool", "gesprek", "week", "contact", "directeur", "website", "e-mail", "afspraak", "team", tm::stopwords("dutch") )
+tokens_nouns_stop <- tokens_nouns[!grepl(paste(stop_nouns, collapse="|"), tokens_nouns$lemma),]
+tokens_nouns_stop <- tokens_nouns_stop[(which(nchar(tokens_nouns_stop$lemma) >= 4)), ] # words less than or equal to 'n' char
+```
+
+Meta data matching.
+```{r, meta data}
+## Match the gids to rows in our schools table
+schools <- read.csv("https://duo.nl/open_onderwijsdata/images/03.-alle-vestigingen-basisonderwijs.csv", sep=";", stringsAsFactors = FALSE)
+noun_dtm <- create_dtm(docs = tokens_nouns_stop$school, terms = tokens_nouns_stop$lemma)
+gids_id <- substring(rownames(noun_dtm), 1, 6)
+gids_info <- schools[match(gids_id, schools$VESTIGINGSNUMMER), c("VESTIGINGSNUMMER", "DENOMINATIE")]
+head(gids_info)
+```
+
+Accumulating texts into the same cell.
+```{r, accumulate texts in a cell}
+accumulated <- aggregate(lemma ~ school, data = tokens_nouns_stop, paste, collapse = " ")
+names(accumulated) <- c("school", "texts")
+names(gids_info) <- c("school", "denominatie")
+accumulated <- merge(accumulated, gids_info, by = "school")
+
+table(accumulated$denominatie) #Remove rare ones
+
+accumulated <- accumulated[ ! accumulated$denominatie %in% c("Antroposofisch", "Evangelisch", "Gereformeerd vrijgemaakt", "Interconfessioneel", "Islamitisch", "Reformatorisch", "Samenwerking PC, RK") ,]
+accumulated <- accumulated[c("school", "denominatie", "texts")]
+accumulated$texts <- iconv(accumulated$texts, "UTF-8", "latin1", sub = " ")
+
+head(accumulated)
+```
+
+# Creating a document term matrix.
+```{r, document-term matrix}
+doc_matrix <- create_matrix(accumulated$texts, weighting = tm::weightTfIdf)
+doc_matrix
+```
+
+# Creating a container
+
+Container is the list of objects that will be fed to the ML algoritms. `accumulated$denominatie` vector is the document label. It is factorized and coerced to numeric as the package requires that.
+
+```{r}
+container <-
+  create_container(
+    matrix = doc_matrix,
+    labels = as.numeric(factor(accumulated$denominatie)),
+    trainSize = 1:165,
+    testSize = 166:185,
+    virgin = FALSE
+  )
+```
+
+# Training models
+
+The nine algorithms which `RTextTools` provides can be trained and classified (run `print_algorithms()`):
+
+| Argument|  Technique | Remarks|
+|:--|:--|:--|
+|"SVM"|Support vector machine||
+|"GLMNET"| glmnet ||
+|"MAXENT"| Maximum entropy ||
+|"SLDA"|Scaled linear discriminant analysis||
+|"BOOSTING"| Boosting | (`caTools` pkg) |
+|"BAGGING"| Bagging | (`ipred` pkg) |
+|"RF"| Random forest | (`randomForest` pkg) |
+|"NNET"| Neural networks | (`nnet` pkg) |
+|"TREE"| Classification or regression tree | (`tree` pkg) |
+
+Caution: Some techniques takes more time. SVM, GLMNET and MAXENT are low-memory algorithms.
+
+We run a RF model.
+```{r}
+rf <- train_models(container, "RF")
+```
+
+# Classify data from trained model
+
+```{r}
+rf_classify <- classify_models(container, rf)
+```
+
+# Analyzing model
+
+```{r}
+analytics <- create_analytics(container, rf_classify)
+summary(analytics)
+```
+
+As the prediction score is not very high, we are not able to define the school denomination by the words that they are using in the schoolgids.
+```{r}
+compare <- as.data.frame(cbind(as.numeric(factor(accumulated$denominatie))[166:185], rf_classify$FORESTS_LABEL))
+colnames(compare) <- c("actual_denominatie", "predicted_denominatie")
+compare <- compare %>% mutate(predicted_denominatie = predicted_denominatie - 1)
+round(prop.table(table(compare$actual_denominatie == compare$predicted_denominatie)), 3)
+```
+
+
+-------------------------------------------------------
+# References
+
+Jurka, T., *et al.* (2013). *RTextTools: A Supervised Learning Package for Text Classification.* The R Journal. 5/1. ISSN 2073-4859.
