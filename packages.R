@@ -18,7 +18,7 @@ if(!("pdfbox" %in% installed)) {
 }
 
 if(!("frogr" %in% installed)) {
-  devtools::install_github("frogr", username="vanatteveldt")
+  devtools::install_github("vanatteveldt/frogr")
 }
 
 # Install open NLP models
