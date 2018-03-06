@@ -86,7 +86,7 @@ url_domain <- function(url) {
 
 is_school_gids <- function(links) {
   
-  is_doc <- sapply(links$url, function(url) {
+  is_doc <- vapply(links$url, FUN.VALUE = logical(1), function(url) {
     parsed <- parse_url(url)
     grepl(parsed$path, pattern = "\\.(pdf|doc|docx)$")
   })
