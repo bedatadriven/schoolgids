@@ -16,7 +16,7 @@ find_schoolgids <- function(school_url, debug = FALSE) {
                      url = character(0), 
                      stringsAsFactors = FALSE)
     
-  while(depth <= 3 && length(to_visit) > 0) {
+  while(depth <= 10 && length(to_visit) > 0) {
   
     cat(sprintf("...Fetching %d pages at depth %d...\n", length(to_visit), depth))
     
@@ -39,17 +39,18 @@ find_schoolgids <- function(school_url, debug = FALSE) {
         # Also mark the effective url as visited
         visited <- c(visited, response$url)
         
-        pdf_links <- grepl(page_links$url, pattern = "\\.pdf$", ignore.case = TRUE)
+        pdf_links <- grepl(page_links$url, pattern = "\\.(pdf|doc|docx)$", ignore.case = TRUE)
         school_gids <- pdf_links & is_school_gids(page_links)
-        if(any(pdf_links)) {
-          if(debug) {
-            new_links <- page_links[pdf_links, ]
-            new_links$page_url <- url
-            pdfs <- rbind(pdfs, new_links)
-          } else if(any(school_gids)) {
-            page_links$page_url <- url
-            return(page_links[school_gids, ])
-          } 
+        
+        if(any(school_gids)) {
+          gids_links <- page_links[school_gids, ]
+          
+          valid <- is_actually_pdf(gids_links)
+          if(any(valid)) {
+            gids_links$page_url <- url
+            
+            return(gids_links[valid, ])
+          }
         }
         
         # impose a reasonable limit of pages to search for each school
@@ -58,7 +59,7 @@ find_schoolgids <- function(school_url, debug = FALSE) {
         }
         
         # Otherwise identify the next round of pages to crawl
-        non_html_links <- grepl(page_links$url, pattern = "\\.(pdf|jpg|jpeg|png)$", ignore.case = TRUE)
+        non_html_links <- grepl(page_links$url, pattern = "\\.(pdf|jpg|jpeg|png|docx|doc)$", ignore.case = TRUE)
         
         html_urls <- unique(page_links$url[!non_html_links & !is.na(page_links$url)])
         already_seen <- html_urls %in% visited
@@ -82,6 +83,20 @@ find_schoolgids <- function(school_url, debug = FALSE) {
   pdfs
 }
 
+#' Verify that PDF/document URLs actually exist on the server
+#' 
+is_actually_pdf <- function(pdf_links) {
+  sapply(pdf_links$url, function(url) {
+    # Only perform the check if the url is point to a document
+    if(!grepl(url, pattern = "\\.(pdf|doc|docx)$")) {
+      return(TRUE)
+    }
+    cat(sprintf("Checking %s...\n", url))
+    response <- GET(url)
+    response$status_code == 200
+  })
+}
+
 url_domain <- function(url) {
   hostname <- parse_url(url)$hostname
   if(is.character(hostname)) {
@@ -93,7 +108,8 @@ url_domain <- function(url) {
 
 is_school_gids <- function(links) {
   match <- grepl(links$text, pattern = "gids", ignore.case = TRUE) | 
-           grepl(links$url, pattern = "gids|schoolg", ignore.case = TRUE)
+           grepl(links$url, pattern = "gids|schoolg", ignore.case = TRUE) |
+           grepl(links$url, pattern = "2017-2018")
   
   match
 }
