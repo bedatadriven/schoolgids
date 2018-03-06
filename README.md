@@ -85,8 +85,8 @@ Sample analyses:
 
 ## Week 6
 
-* [Creating Interactive Maps with Leaflet](week6/interactiveMaps.html)
+* [Creating Interactive Maps with Leaflet](week6/interactiveMaps.Rmd)
 
-* [Measuring word embeddings with word2vec](week6/word2vec.html)
+* [Measuring word embeddings with word2vec](week6/word2vec.Rmd)
 
 
