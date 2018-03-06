@@ -1,7 +1,7 @@
 
 library(parallel)
 
-source("crawl-funs.R")
+source("corpus/crawl-funs.R")
 
 schools <- read.table("schools.csv", 
                       sep=";", 
