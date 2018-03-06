@@ -75,7 +75,7 @@ Sample analyses:
 
 Topics covered:
 
-* [*Topic Modeling*](week5/topic_modeling.md)
+* [Topic Modeling](week5/topic_modeling.md)
 
 Sample analyses:
 
@@ -84,5 +84,9 @@ Sample analyses:
 * [Classifying text with RTextTools package](week5/RTextTools.md)
 
 ## Week 6
+
+* [Creating Interactive Maps with Leaflet](week6/interactiveMaps.html)
+
+* [Measuring word embeddings with word2vec](week6/word2vec.html)
 
 

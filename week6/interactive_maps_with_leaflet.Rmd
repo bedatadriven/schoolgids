@@ -1,0 +1,109 @@
+---
+title: "Creating Interactive Maps with Leaflet"
+output: html_notebook
+---
+
+# Libraries to be used
+```{r, message=FALSE}
+# Data import & transform libraries
+library(magrittr)
+library(tm)
+# Data visualization & mapping libraries
+library(leaflet)
+library(geojsonio)
+library(sp)
+```
+
+## Where are we?
+
+```{r}
+#Chaining with pipes
+m <- leaflet() %>%
+  addTiles() %>%
+  addMarkers(lat = 52.0728814, lng = 4.3268866,
+             popup = "the birthplace of renjin")
+m
+```
+
+# Word count per document
+
+Importing the data as DocumentTermMatrix.
+```{r, message=FALSE}
+datafile <- "schoolgids2017v4_100.rds"
+if(!file.exists(datafile)) {
+  download.file("https://storage.googleapis.com/schoolgids/schoolgids2017v4/schoolgids2017v4_100.rds", datafile)
+}
+corpus <- readRDS(datafile)
+dtm <- DocumentTermMatrix(corpus)
+```
+
+# Calculating the row sums from DTM
+
+```{r}
+dtm_rowsums <- rowSums(as.matrix(dtm))
+dtm_rowsums <- dtm_rowsums[!dtm_rowsums <= 1000] # Remove the ones less than 1000 words
+dtm_rowsums <- data.frame(VESTIGINGSNUMMER = names(dtm_rowsums), wLength = unname(dtm_rowsums))
+head(dtm_rowsums, 5)
+```
+
+Matching the meta data from schools dataset with the total word counts per document
+```{r}
+schools <- read.csv("https://duo.nl/open_onderwijsdata/images/03.-alle-vestigingen-basisonderwijs.csv", sep=";", stringsAsFactors = FALSE)
+gids_id <- substring(dtm_rowsums$VESTIGINGSNUMMER, 1, 6)
+gids_info <- schools[match(gids_id, schools$VESTIGINGSNUMMER), c("VESTIGINGSNUMMER", "PROVINCIE")]
+words <- merge(dtm_rowsums, gids_info, by = "VESTIGINGSNUMMER")
+words$PROVINCIE <- as.factor(words$PRO)
+words <- aggregate(wLength ~ PROVINCIE, words, mean)
+head(words)
+```
+
+# Choropleth map per Provincie
+
+```{r}
+# Importing the `geojson` data of the map of the Netherlands
+url <- "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/the-netherlands.geojson"
+nl_map <- geojsonio::geojson_read(url, what = "sp")
+bins <- c(7000, 8000, 10000, 12000, 15000, Inf)
+pal <- colorBin("viridis", domain = words$wLength, bins = bins)
+
+labels <- sprintf(
+  "<strong>%s</strong><br/>%g words</sup>",
+  nl_map$name, words$wLength
+) %>% lapply(htmltools::HTML)
+
+leaflet(nl_map) %>%
+  addTiles() %>%
+  addPolygons(
+  fillColor = ~ pal(words$wLength),
+  smoothFactor = 0.3,
+  weight = 1,
+  color = "white",
+  dashArray = "3",
+  opacity = 0.8,
+  fillOpacity = 0.7,
+  highlight = highlightOptions(
+  weight = 5,
+  color = "#666",
+  dashArray = "",
+  fillOpacity = 0.7,
+  bringToFront = TRUE
+  ),
+  label = labels,
+  labelOptions = labelOptions(
+  style = list("font-weight" = "normal", padding = "3px 8px"),
+  textsize = "15px",
+  direction = "auto"
+  )
+  ) %>%
+  addLegend(
+  pal = pal,
+  values = ~words$wLength,
+  opacity = 0.7,
+  title = NULL,
+  position = "bottomright"
+  )
+```
+
+# References
+
+[**http://rstudio.github.io/leaflet/**](http://rstudio.github.io/leaflet/)
