@@ -39,8 +39,7 @@ find_schoolgids <- function(school_url, debug = FALSE) {
         # Also mark the effective url as visited
         visited <- c(visited, response$url)
         
-        pdf_links <- grepl(page_links$url, pattern = "\\.(pdf|doc|docx)$", ignore.case = TRUE)
-        school_gids <- pdf_links & is_school_gids(page_links)
+        school_gids <- is_school_gids(page_links)
         
         if(any(school_gids)) {
           gids_links <- page_links[school_gids, ]
@@ -107,11 +106,17 @@ url_domain <- function(url) {
 }
 
 is_school_gids <- function(links) {
+  
+  is_doc <- sapply(links$url, function(url) {
+    parsed <- parse_url(url)
+    grepl(parsed$path, pattern = "\\.(pdf|doc|docx)$")
+  })
+  
   match <- grepl(links$text, pattern = "gids", ignore.case = TRUE) | 
            grepl(links$url, pattern = "gids|schoolg", ignore.case = TRUE) |
            grepl(links$url, pattern = "2017-2018")
   
-  match
+  is_doc & match
 }
 
 find_links <- function(response) {
