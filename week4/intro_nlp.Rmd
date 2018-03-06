@@ -36,7 +36,7 @@ allerlei materialen (klimtoestellen, ballen, stelten, springtouw) leren de kinde
 bewegingen te maken. Vanuit een goed ontwikkelde grove motoriek kan de fijne motoriek 
 zich ontwikkelen.")
 
-sentences <- annotate(kleuters,  Maxent_Sent_Token_Annotator(language = "nl"))
+sentences <- NLP::annotate(kleuters,  Maxent_Sent_Token_Annotator(language = "nl"))
 
 ## Extract sentences.
 kleuters[sentences]
@@ -62,7 +62,7 @@ uses standard codes based on the English words for the parts of speech:
 
 ```{r}
 
-annotations <- annotate(kleuters, list(
+annotations <- NLP::annotate(kleuters, list(
             Maxent_Sent_Token_Annotator(language = "nl"),
             Maxent_Word_Token_Annotator(language = "nl"),
             Maxent_POS_Tag_Annotator(language = "nl")))

@@ -1,6 +1,18 @@
 Introduction to Natural Language Processing (NLP)
 ================
 
+-   [The NLP libraries](#the-nlp-libraries)
+    -   [Parts of Speech](#parts-of-speech)
+-   [Frog](#frog)
+    -   [Calling Frog](#calling-frog)
+    -   [Parts-of-Speech Tagging](#parts-of-speech-tagging)
+        -   [Abbreviations used in frog POS](#abbreviations-used-in-frog-pos)
+        -   [Substantieven](#substantieven)
+    -   [Chunking](#chunking)
+    -   [Named-Entity Recognition](#named-entity-recognition)
+    -   [Lemitization](#lemitization)
+    -   [Parsing](#parsing)
+
 In the previous two weeks, we largely looked at the schoolgids corpus using a "bag of words" model. This week, we will delve further into the documents themselves.
 
 The NLP libraries
@@ -26,7 +38,7 @@ allerlei materialen (klimtoestellen, ballen, stelten, springtouw) leren de kinde
 bewegingen te maken. Vanuit een goed ontwikkelde grove motoriek kan de fijne motoriek 
 zich ontwikkelen.")
 
-sentences <- annotate(kleuters,  Maxent_Sent_Token_Annotator(language = "nl"))
+sentences <- NLP::annotate(kleuters,  Maxent_Sent_Token_Annotator(language = "nl"))
 
 ## Extract sentences.
 kleuters[sentences]
@@ -54,7 +66,7 @@ We'll use a part-of-speech annotator from the Apache OpenNLP project trained for
 | Punc | Punctuation | interpuctie           | . , :     |
 
 ``` r
-annotations <- annotate(kleuters, list(
+annotations <- NLP::annotate(kleuters, list(
             Maxent_Sent_Token_Annotator(language = "nl"),
             Maxent_Word_Token_Annotator(language = "nl"),
             Maxent_POS_Tag_Annotator(language = "nl")))
@@ -124,6 +136,8 @@ Compared to OpenNLP:
 Calling Frog
 ------------
 
+Before calling frog from R, you must have a frog server running.
+
 ``` r
 library(frogr, quietly = TRUE)
 ```
@@ -141,11 +155,10 @@ tokens <- call_frog(as.character(kleuters))
 
     ## Frogging document 1: 288 characters
 
-In constrast to OpenNLP, the frogr package produces a table of tokens. It also includes part of speech tags, but with more detail:
+Parts-of-Speech Tagging
+-----------------------
 
-``` r
-knitr::kable(tokens[1:13, c("word", "lemma", "morph", "pos")])
-```
+In constrast to OpenNLP, the frogr package produces a table of tokens. It also includes part of speech tags, but with more detail:
 
 | word         | lemma        | morph                    | pos                          |
 |:-------------|:-------------|:-------------------------|:-----------------------------|
@@ -190,66 +203,190 @@ The parts-of-speech codes are slightly different than OpenNLP and include more s
 
 A quick outline:
 
--   Substantieven (N): *schoolgebouw*, *vragen*, *gegevens*
--   Adjectieven (ADJ): *belangrijk*, *goed*, *grove*, *fijne*
--   Werkwoorden (WW): *leren*, *is*, *maken*
--   Telwoorden (TW): *zoveel*, *twee*, *24*, *1988*
--   Voornaamwoorden (VNW): *deze*, *ons*, *niemand*, *we*
--   Lidwoorden (LID): *de*, *het*
--   Voorzetsels (VZ): *in*, *tussen*, *op de hoogte*, *ten behoeve van*, *van*
--   Voegwoorden (VG): *en*, *dat*, *of*
--   Bijwoorden (BW): *waarin*, *bijvoorbeeld*, *niet*
--   Tussenwerpsels (TSW): *o*
--   Leestekens (LET): period, comma, quotation marks, etc
--   Speciale tokens (SPEC): bullet points, everything else
+| Code | Part of Speech | Example                                        |
+|------|----------------|------------------------------------------------|
+| N    | Substantieven  | schoolgebouw, vragen, gegevens                 |
+| ADJ  | Adjectieven    | belangrijk, goed, grove, fijne                 |
+| WW   | Werkwoorden    | leren, is, maken                               |
+| TW   | Telwoorden     | zoveel, twee, 24, 1988                         |
+| VNW  | Voornaamwoordn | deze, ons, niemand, we                         |
+| LID  | Lidwoorden     | zoveel, twee, 24, 1988                         |
+| VZ   | Voorzetsels    | in, tussen, op de hoogte, ten behoeve van, van |
+| VG   | Voegwoorden    | en, dat, of                                    |
+| BW   | Bijwoorden     | waarin, bijvoorbeeld, niet                     |
+| TSW  | Tussenwerpsels | o                                              |
+| LET  | Leestekens     | period, comma, quotation marks, etc            |
+| SPEC | Special tokens | Everything else !                              |
 
-Frog further subdivides parts of speech. For example, substantieven are have five properties:
+Frog further subdivides parts of speech. For details on these subdivisions, see the paper referenced above. But it is worth briefly looking at the additional properties of *substantieven* as an example.
+
+### Substantieven
+
+*Substantieven*, or nouns, have up to five additional properties provided by frog:
 
 ``` r
 knitr::kable(tokens[tokens$majorpos == 'N', c("word", "pos")])
 ```
 
+|     | word           | pos                         |
+|-----|:---------------|:----------------------------|
+| 3   | kleuters       | N(soort,mv,basis)           |
+| 6   | ontwikkeling   | N(soort,ev,basis,zijd,stan) |
+| 10  | motoriek       | N(soort,ev,basis,zijd,stan) |
+| 15  | behulp         | N(soort,ev,basis,onz,stan)  |
+| 18  | materialen     | N(soort,mv,basis)           |
+| 20  | klimtoestellen | N(soort,mv,basis)           |
+| 22  | ballen         | N(soort,mv,basis)           |
+| 24  | stelten        | N(soort,mv,basis)           |
+| 26  | springtouw     | N(soort,ev,basis,zijd,stan) |
+| 30  | kinderen       | N(soort,mv,basis)           |
+| 32  | bewegingen     | N(soort,mv,basis)           |
+| 41  | motoriek       | N(soort,ev,basis,zijd,stan) |
+| 45  | motoriek       | N(soort,ev,basis,zijd,stan) |
+
+#### N-Type
+
+The first property distinguishes between *soortbepalende* (soort) en *individualiserende* (eigen) substantieven. In English, these types are called "common nouns" and "proper nouns".
+
+-   **eigen**: Names of people, places, and things that are normally capitalized.
+-   **soort**: All other nouns.
+
+#### Getal
+
+The second property distinguishes between the singular and plural forms of nouns.
+
+-   **ev**: enkelvoud (singular)
+-   **mv**: meervouden (plural)
+
+#### Graad
+
+Tags nouns in their diminutive form (dimin) or (basis)
+
+> Diminutiefvormen zijn gemarkeerd door een suffix (-je, -tje, -pje, -ke, ...). Bij afwezigheid van het suffix wordt de waarde ‘basis’ toegekend; die waarde wordt ook toegekend aan de substantieven die geen diminutiefvorm kunnen hebben (gebergte, vee). Substantieven die steeds een diminutiefsuffix hebben (ootje, nippertje) krijgen de waarde ‘diminutief’, behalve wanneer ze niet het typisch diminutieve kenmerk van onzijdigheid vertonen, d.w.z. wanneer ze —in het enkelvoud— niet combineren met het/dat/dit/ons maar met de/die/deze/onze; dat is soms het geval bij persoonsnamen, als in die/?dat Nelleke toch.
+
+#### Genus
+
+> Bij POS tagging maken we alleen het onderscheid tussen zijdige en onzijdige substantieven; de verdere differentiatie van de zijdige substantieven in masculiene en feminiene wordt dus niet gemaakt. De zijdige substantieven zijn die welke in het enkelvoud determiners nemen als de/die/deze/onze, terwijl de onzijdige determiners nemen als het/dat/dit/ons. In combinaties als de laatste drie jaar en om de vier uur krijgen jaar en uur ondanks de aanwezigheid van de toch hun gebruikelijke waarde onzijdig. Het lidwoord is hier namelijk niet het zijdige enkelvoudige de maar het meervoudige de.
+
+#### Namvaal
+
+-   Standaard (nominatief, oblique)
+-   Genatief ("*ouders* taak")
+
 Chunking
 --------
 
-Chunk tags are assigned to groups of words that belong together (i.e. phrases). The most common phrases are the noun phrase (NP, for example the black cat) and the verb phrase (VP, for example is purring) [source](https://www.clips.uantwerpen.be/pages/mbsp-tags).
+Chunk tags are assigned to groups of words that belong together (i.e. phrases).
 
-| **Tag** |      **Description**      |     **Words**    |    **Example**   |
-|:-------:|:-------------------------:|:----------------:|:----------------:|
-|    NP   |        noun phrase        | DT+RB+JJ+NN + PR | the strange bird |
-|    PP   |    prepositional phrase   |       TO+IN      |    in between    |
-|    VP   |        verb phrase        |     RB+MD+VB     |    was looking   |
-|   ADVP  |       adverb phrase       |        RB        |       also       |
-|   ADJP  |      adjective phrase     |     CC+RB+JJ     |   warm and cosy  |
-|   SBAR  | subordinating conjunction |        IN        |  whether or not  |
-|   PRT   |          particle         |        RP        |   up the stairs  |
-|   INTJ  |        interjection       |        UH        |       hello      |
-
-Unfortunately, we have not been able to locate an OpenNLP chunking model for the Dutch language. There has been work in this area, see "Spranger, Kristina & Heid, Ulrich. (2002). A Dutch Chunker as a Basis for the Extraction of Linguistic Knowledge. 93-109" from the conference "Computational Linguistics in the Netherlands."
-
-For this example, we'll look at some text from my high school:
+The most common phrases are the noun phrase (NP, for example the black cat) and the verb phrase (VP, for example is purring) [source](https://www.clips.uantwerpen.be/pages/mbsp-tags).
 
 ``` r
-text <- as.String("The Wellsboro Area School District will prepare all students for lifelong success through excellence in education.")
-
-doc <- AnnotatedPlainTextDocument(text, annotate(text, 
-                  list(Maxent_Sent_Token_Annotator(language = "en"),
-                        Maxent_Word_Token_Annotator(language = "en"),
-                        Maxent_POS_Tag_Annotator(language = "en"),
-                        Maxent_Chunk_Annotator(language = "en"))))
-
-chunked_sents(doc)
+tokens <- call_frog("De Martin Luther Kingschool biedt de kinderen een brede ontwikkeling. Het onderwijs is             
+zodanig ingericht dat naast de cognitieve ook de sociaal-emotionele, de creatieve en de             
+motorische ontwikkeling gestimuleerd worden.")
 ```
 
-    ## [[1]]
-    ## (S
-    ##   (NP The/DT Wellsboro/NNP Area/NNP School/NNP District/NNP)
-    ##   (VP will/MD prepare/VB)
-    ##   (NP all/DT students/NNS)
-    ##   (PP for/IN)
-    ##   (NP lifelong/JJ success/NN)
-    ##   (PP through/IN)
-    ##   (NP excellence/NN)
-    ##   (PP in/IN)
-    ##   (NP education/NN)
-    ##   ./.)
+    ## Frogging document 1: 245 characters
+
+``` r
+knitr::kable(tokens[, c("word", "pos", "chunk")])
+```
+
+| word                       | pos                                               | chunk            |
+|:---------------------------|:--------------------------------------------------|:-----------------|
+| De                         | LID(bep,stan,rest)                                | B-NP             |
+| Martin\_Luther\_Kingschool | SPEC(deeleigen)\_SPEC(deeleigen)\_SPEC(deeleigen) | I-NP\_I-NP\_I-NP |
+| biedt                      | WW(pv,tgw,met-t)                                  | B-VP             |
+| de                         | LID(bep,stan,rest)                                | B-NP             |
+| kinderen                   | N(soort,mv,basis)                                 | I-NP             |
+| een                        | LID(onbep,stan,agr)                               | B-NP             |
+| brede                      | ADJ(prenom,basis,met-e,stan)                      | I-NP             |
+| ontwikkeling               | N(soort,ev,basis,zijd,stan)                       | I-NP             |
+| .                          | LET()                                             | O                |
+| Het                        | LID(bep,stan,evon)                                | B-NP             |
+| onderwijs                  | N(soort,ev,basis,onz,stan)                        | I-NP             |
+| is                         | WW(pv,tgw,ev)                                     | B-VP             |
+| zodanig                    | ADJ(vrij,basis,zonder)                            | B-ADJP           |
+| ingericht                  | WW(vd,vrij,zonder)                                | I-ADJP           |
+| dat                        | VG(onder)                                         | B-SBAR           |
+| naast                      | VZ(init)                                          | B-PP             |
+| de                         | LID(bep,stan,rest)                                | B-NP             |
+| cognitieve                 | ADJ(prenom,basis,met-e,stan)                      | I-NP             |
+| ook                        | BW()                                              | B-ADVP           |
+| de                         | LID(bep,stan,rest)                                | B-NP             |
+| sociaal-emotionele         | ADJ(nom,basis,met-e,zonder-n,stan)                | I-NP             |
+| ,                          | LET()                                             | O                |
+| de                         | LID(bep,stan,rest)                                | B-NP             |
+| creatieve                  | ADJ(prenom,basis,met-e,stan)                      | I-NP             |
+| en                         | VG(neven)                                         | B-CONJP          |
+| de                         | LID(bep,stan,rest)                                | B-NP             |
+| motorische                 | ADJ(prenom,basis,met-e,stan)                      | I-NP             |
+| ontwikkeling               | N(soort,ev,basis,zijd,stan)                       | I-NP             |
+| gestimuleerd               | WW(vd,vrij,zonder)                                | B-VP             |
+| worden                     | WW(inf,vrij,zonder)                               | I-VP             |
+| .                          | LET()                                             | O                |
+
+Named-Entity Recognition
+------------------------
+
+``` r
+knitr::kable(tokens[1:5, c("word", "pos", "ner")])
+```
+
+| word                       | pos                                               | ner                 |
+|:---------------------------|:--------------------------------------------------|:--------------------|
+| De                         | LID(bep,stan,rest)                                | O                   |
+| Martin\_Luther\_Kingschool | SPEC(deeleigen)\_SPEC(deeleigen)\_SPEC(deeleigen) | B-PER\_I-PER\_I-PER |
+| biedt                      | WW(pv,tgw,met-t)                                  | O                   |
+| de                         | LID(bep,stan,rest)                                | O                   |
+| kinderen                   | N(soort,mv,basis)                                 | O                   |
+
+Frog supports several types of Named entities:
+
+-   Person (PER)
+-   Organization (ORG)
+-   Location (LOC)
+-   Product (PRO)
+-   Event (EVE)
+-   Miscellaneous (MISC)
+
+Lemitization
+------------
+
+Lemitization is a more sophisticated version of stemming based on dictionaries and parts of speech tagging.
+
+``` r
+knitr::kable(tokens[1:5, c("word", "majorpos", "lemma")])
+```
+
+| word                       | majorpos | lemma                      |
+|:---------------------------|:---------|:---------------------------|
+| De                         | LID      | de                         |
+| Martin\_Luther\_Kingschool | SPEC     | Martin\_Luther\_Kingschool |
+| biedt                      | WW       | bieden                     |
+| de                         | LID      | de                         |
+| kinderen                   | N        | kind                       |
+
+The lemmatized form is defined as follows: \* For nouns, the lemma is the singular form \* For verbs, the lemma is the infinitive
+
+Parsing
+-------
+
+Frog also includes a dependency parser, which attempts to understand the sentence.
+
+``` r
+tokens <- call_frog("Onze school is blauw")
+```
+
+    ## Frogging document 1: 20 characters
+
+``` r
+knitr::kable(tokens[, c("position", "word", "majorpos", "parse1", "parse2")])
+```
+
+|  position| word   | majorpos |  parse1| parse2 |
+|---------:|:-------|:---------|-------:|:-------|
+|         1| Onze   | VNW      |       2| det    |
+|         2| school | N        |       3| su     |
+|         3| is     | WW       |       0| ROOT   |
+|         4| blauw  | ADJ      |       3| predc  |
